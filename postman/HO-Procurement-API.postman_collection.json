@@ -1,0 +1,1027 @@
+{
+    "info": {
+        "_postman_id": "b6d54187-fd5b-42f6-8d31-85ef7a2b78a1",
+        "name": "HO Procurement API",
+        "description": "Collection untuk autentikasi Sanctum dan flow procurement (PR -> Approval -> PO -> Invoice) pada sistem HO multi-SPPG multi-vendor.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Auth - Login",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test('Login status 200', function () {",
+                            "  pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "var body = pm.response.json();",
+                            "if (body.token) {",
+                            "  pm.collectionVariables.set('token', body.token);",
+                            "}",
+                            "",
+                            "if (body.user && body.user.role) {",
+                            "  pm.collectionVariables.set('logged_in_role', body.user.role);",
+                            "}",
+                            "",
+                            "if (body.user && body.user.sppg_id) {",
+                            "  pm.collectionVariables.set('sppg_id', String(body.user.sppg_id));",
+                            "}"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"email\": \"purchasing@ho.local\",\n  \"password\": \"password123\",\n  \"device_name\": \"postman\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/v1/auth/login",
+                    "host": ["{{base_url}}"],
+                    "path": ["api", "v1", "auth", "login"]
+                }
+            }
+        },
+        {
+            "name": "Auth - Me",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/v1/auth/me",
+                    "host": ["{{base_url}}"],
+                    "path": ["api", "v1", "auth", "me"]
+                }
+            }
+        },
+        {
+            "name": "Purchase Request - List",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/v1/purchase-requests?per_page=10",
+                    "host": ["{{base_url}}"],
+                    "path": ["api", "v1", "purchase-requests"],
+                    "query": [
+                        {
+                            "key": "per_page",
+                            "value": "10"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Purchase Request - Create",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "if (pm.response.code === 201) {",
+                            "  var body = pm.response.json();",
+                            "  if (body.data && body.data.id) {",
+                            "    pm.collectionVariables.set('purchase_request_id', String(body.data.id));",
+                            "  }",
+                            "}"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    },
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"sppg_id\": {{sppg_id}},\n  \"needed_date\": \"2026-03-05\",\n  \"notes\": \"PR mingguan dari Postman\",\n  \"items\": [\n    {\n      \"product_id\": 1,\n      \"quantity\": 10,\n      \"requested_unit_price\": 40000\n    },\n    {\n      \"product_id\": 3,\n      \"quantity\": 20,\n      \"requested_unit_price\": 14500\n    }\n  ]\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/v1/purchase-requests",
+                    "host": ["{{base_url}}"],
+                    "path": ["api", "v1", "purchase-requests"]
+                }
+            }
+        },
+        {
+            "name": "Purchase Request - Approve",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    },
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"status\": \"approved\",\n  \"level\": 1,\n  \"note\": \"Approved via Postman\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/v1/purchase-requests/{{purchase_request_id}}/approve",
+                    "host": ["{{base_url}}"],
+                    "path": [
+                        "api",
+                        "v1",
+                        "purchase-requests",
+                        "{{purchase_request_id}}",
+                        "approve"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Purchase Order - Generate from PR",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    },
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"vendor_id\": {{vendor_id}},\n  \"expected_date\": \"2026-03-06\",\n  \"is_direct_purchase\": false,\n  \"notes\": \"Generate PO dari Postman\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/v1/purchase-requests/{{purchase_request_id}}/purchase-orders",
+                    "host": ["{{base_url}}"],
+                    "path": [
+                        "api",
+                        "v1",
+                        "purchase-requests",
+                        "{{purchase_request_id}}",
+                        "purchase-orders"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Delivery - List",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/v1/deliveries?per_page=10",
+                    "host": ["{{base_url}}"],
+                    "path": ["api", "v1", "deliveries"],
+                    "query": [
+                        {
+                            "key": "per_page",
+                            "value": "10"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Invoice - Generate from Delivery",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    },
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"tax_amount\": 0,\n  \"due_date\": \"2026-03-08\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/v1/deliveries/{{delivery_id}}/invoices",
+                    "host": ["{{base_url}}"],
+                    "path": [
+                        "api",
+                        "v1",
+                        "deliveries",
+                        "{{delivery_id}}",
+                        "invoices"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Invoice - List",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/v1/invoices?per_page=10",
+                    "host": ["{{base_url}}"],
+                    "path": ["api", "v1", "invoices"],
+                    "query": [
+                        {
+                            "key": "per_page",
+                            "value": "10"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Role Scenarios",
+            "item": [
+                {
+                    "name": "1) Login as SPPG User",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Login SPPG status 200', function () {",
+                                    "  pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "var body = pm.response.json();",
+                                    "if (body.token) {",
+                                    "  pm.collectionVariables.set('sppg_token', body.token);",
+                                    "  pm.collectionVariables.set('token', body.token);",
+                                    "}",
+                                    "",
+                                    "if (body.user && body.user.sppg_id) {",
+                                    "  pm.collectionVariables.set('sppg_id', String(body.user.sppg_id));",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"{{sppg_user_email}}\",\n  \"password\": \"{{sppg_user_password}}\",\n  \"device_name\": \"postman-sppg\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/login",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "v1", "auth", "login"]
+                        }
+                    }
+                },
+                {
+                    "name": "2) Create PR as SPPG",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Create PR status 201', function () {",
+                                    "  pm.response.to.have.status(201);",
+                                    "});",
+                                    "",
+                                    "var body = pm.response.json();",
+                                    "if (body.data && body.data.id) {",
+                                    "  pm.collectionVariables.set('purchase_request_id', String(body.data.id));",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{sppg_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"sppg_id\": {{sppg_id}},\n  \"needed_date\": \"2026-03-06\",\n  \"notes\": \"PR role scenario - SPPG\",\n  \"items\": [\n    {\n      \"product_id\": 1,\n      \"quantity\": 8,\n      \"requested_unit_price\": 40000\n    },\n    {\n      \"product_id\": 3,\n      \"quantity\": 12,\n      \"requested_unit_price\": 14500\n    }\n  ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/purchase-requests",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "v1", "purchase-requests"]
+                        }
+                    }
+                },
+                {
+                    "name": "3) Login as Owner",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Login Owner status 200', function () {",
+                                    "  pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "var body = pm.response.json();",
+                                    "if (body.token) {",
+                                    "  pm.collectionVariables.set('owner_token', body.token);",
+                                    "  pm.collectionVariables.set('token', body.token);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"{{owner_email}}\",\n  \"password\": \"{{owner_password}}\",\n  \"device_name\": \"postman-owner\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/login",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "v1", "auth", "login"]
+                        }
+                    }
+                },
+                {
+                    "name": "4) Approve PR as Owner",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{owner_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"status\": \"approved\",\n  \"level\": 1,\n  \"note\": \"Owner approved PR role scenario\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/purchase-requests/{{purchase_request_id}}/approve",
+                            "host": ["{{base_url}}"],
+                            "path": [
+                                "api",
+                                "v1",
+                                "purchase-requests",
+                                "{{purchase_request_id}}",
+                                "approve"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "5) Login as Purchasing",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Login Purchasing status 200', function () {",
+                                    "  pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "var body = pm.response.json();",
+                                    "if (body.token) {",
+                                    "  pm.collectionVariables.set('purchasing_token', body.token);",
+                                    "  pm.collectionVariables.set('token', body.token);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"{{purchasing_email}}\",\n  \"password\": \"{{purchasing_password}}\",\n  \"device_name\": \"postman-purchasing\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/login",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "v1", "auth", "login"]
+                        }
+                    }
+                },
+                {
+                    "name": "6) Generate PO as Purchasing",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{purchasing_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"vendor_id\": {{vendor_id}},\n  \"expected_date\": \"2026-03-07\",\n  \"is_direct_purchase\": false,\n  \"notes\": \"Generate PO role scenario\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/purchase-requests/{{purchase_request_id}}/purchase-orders",
+                            "host": ["{{base_url}}"],
+                            "path": [
+                                "api",
+                                "v1",
+                                "purchase-requests",
+                                "{{purchase_request_id}}",
+                                "purchase-orders"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "7) Login as Finance",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Login Finance status 200', function () {",
+                                    "  pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "var body = pm.response.json();",
+                                    "if (body.token) {",
+                                    "  pm.collectionVariables.set('finance_token', body.token);",
+                                    "  pm.collectionVariables.set('token', body.token);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"{{finance_email}}\",\n  \"password\": \"{{finance_password}}\",\n  \"device_name\": \"postman-finance\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/login",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "v1", "auth", "login"]
+                        }
+                    }
+                },
+                {
+                    "name": "8) Generate Invoice as Finance",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{finance_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"tax_amount\": 0,\n  \"due_date\": \"2026-03-10\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/deliveries/{{delivery_id}}/invoices",
+                            "host": ["{{base_url}}"],
+                            "path": [
+                                "api",
+                                "v1",
+                                "deliveries",
+                                "{{delivery_id}}",
+                                "invoices"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Negative Role Tests (Expected 403)",
+            "item": [
+                {
+                    "name": "1) Login as SPPG User",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Login SPPG status 200', function () {",
+                                    "  pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "var body = pm.response.json();",
+                                    "if (body.token) {",
+                                    "  pm.collectionVariables.set('sppg_token', body.token);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"{{sppg_user_email}}\",\n  \"password\": \"{{sppg_user_password}}\",\n  \"device_name\": \"postman-negative-sppg\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/login",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "v1", "auth", "login"]
+                        }
+                    }
+                },
+                {
+                    "name": "2) SPPG tries to approve PR (must be 403)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Forbidden 403', function () {",
+                                    "  pm.response.to.have.status(403);",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{sppg_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"status\": \"approved\",\n  \"level\": 1,\n  \"note\": \"Should fail for SPPG role\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/purchase-requests/{{purchase_request_id}}/approve",
+                            "host": ["{{base_url}}"],
+                            "path": [
+                                "api",
+                                "v1",
+                                "purchase-requests",
+                                "{{purchase_request_id}}",
+                                "approve"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "3) Login as Purchasing",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Login Purchasing status 200', function () {",
+                                    "  pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "var body = pm.response.json();",
+                                    "if (body.token) {",
+                                    "  pm.collectionVariables.set('purchasing_token', body.token);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"{{purchasing_email}}\",\n  \"password\": \"{{purchasing_password}}\",\n  \"device_name\": \"postman-negative-purchasing\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/login",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "v1", "auth", "login"]
+                        }
+                    }
+                },
+                {
+                    "name": "4) Purchasing tries to approve PR (must be 403)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Forbidden 403', function () {",
+                                    "  pm.response.to.have.status(403);",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{purchasing_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"status\": \"approved\",\n  \"level\": 1,\n  \"note\": \"Should fail for Purchasing role\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/purchase-requests/{{purchase_request_id}}/approve",
+                            "host": ["{{base_url}}"],
+                            "path": [
+                                "api",
+                                "v1",
+                                "purchase-requests",
+                                "{{purchase_request_id}}",
+                                "approve"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "5) Login as Owner",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Login Owner status 200', function () {",
+                                    "  pm.response.to.have.status(200);",
+                                    "});",
+                                    "",
+                                    "var body = pm.response.json();",
+                                    "if (body.token) {",
+                                    "  pm.collectionVariables.set('owner_token', body.token);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"{{owner_email}}\",\n  \"password\": \"{{owner_password}}\",\n  \"device_name\": \"postman-negative-owner\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/auth/login",
+                            "host": ["{{base_url}}"],
+                            "path": ["api", "v1", "auth", "login"]
+                        }
+                    }
+                },
+                {
+                    "name": "6) Owner tries to generate invoice (must be 403)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Forbidden 403', function () {",
+                                    "  pm.response.to.have.status(403);",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{owner_token}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"tax_amount\": 0,\n  \"due_date\": \"2026-03-12\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/deliveries/{{delivery_id}}/invoices",
+                            "host": ["{{base_url}}"],
+                            "path": [
+                                "api",
+                                "v1",
+                                "deliveries",
+                                "{{delivery_id}}",
+                                "invoices"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Auth - Logout",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/v1/auth/logout",
+                    "host": ["{{base_url}}"],
+                    "path": ["api", "v1", "auth", "logout"]
+                }
+            }
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://127.0.0.1:8000"
+        },
+        {
+            "key": "token",
+            "value": ""
+        },
+        {
+            "key": "sppg_id",
+            "value": "1"
+        },
+        {
+            "key": "vendor_id",
+            "value": "1"
+        },
+        {
+            "key": "purchase_request_id",
+            "value": "1"
+        },
+        {
+            "key": "delivery_id",
+            "value": "1"
+        },
+        {
+            "key": "logged_in_role",
+            "value": ""
+        },
+        {
+            "key": "sppg_user_email",
+            "value": "sppg.jkt01@ho.local"
+        },
+        {
+            "key": "sppg_user_password",
+            "value": "password123"
+        },
+        {
+            "key": "owner_email",
+            "value": "owner@ho.local"
+        },
+        {
+            "key": "owner_password",
+            "value": "password123"
+        },
+        {
+            "key": "purchasing_email",
+            "value": "purchasing@ho.local"
+        },
+        {
+            "key": "purchasing_password",
+            "value": "password123"
+        },
+        {
+            "key": "finance_email",
+            "value": "finance@ho.local"
+        },
+        {
+            "key": "finance_password",
+            "value": "password123"
+        },
+        {
+            "key": "sppg_token",
+            "value": ""
+        },
+        {
+            "key": "owner_token",
+            "value": ""
+        },
+        {
+            "key": "purchasing_token",
+            "value": ""
+        },
+        {
+            "key": "finance_token",
+            "value": ""
+        }
+    ]
+}
