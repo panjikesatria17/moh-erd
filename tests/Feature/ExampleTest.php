@@ -14,6 +14,8 @@ class ExampleTest extends TestCase
     {
         $response = $this->get('/');
 
-        $response->assertRedirect(route('ui.dashboard'));
+        $response->assertOk();
+        $response->assertSee('SELAMAT DATANG DI PROGRAM');
+        $response->assertSee(route('login'));
     }
 }

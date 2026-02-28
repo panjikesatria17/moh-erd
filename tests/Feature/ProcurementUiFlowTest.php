@@ -15,8 +15,24 @@ class ProcurementUiFlowTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_ui_dashboard_redirects_guest_to_login(): void
+    {
+        $response = $this->get(route('ui.dashboard'));
+
+        $response->assertRedirect(route('login'));
+    }
+
     public function test_ui_dashboard_is_accessible(): void
     {
+        $user = User::query()->create([
+            'name' => 'Dashboard User',
+            'email' => 'dashboard.user@example.com',
+            'password' => 'password123',
+            'role' => 'owner',
+        ]);
+
+        $this->actingAs($user);
+
         $response = $this->get(route('ui.dashboard'));
 
         $response->assertOk();
@@ -77,6 +93,15 @@ class ProcurementUiFlowTest extends TestCase
             'role' => 'sppg_user',
             'sppg_id' => $sppg->id,
         ]);
+
+        $actor = User::query()->create([
+            'name' => 'UI Actor',
+            'email' => 'ui.actor@example.com',
+            'password' => 'password123',
+            'role' => 'owner',
+        ]);
+
+        $this->actingAs($actor);
 
         $createResponse = $this->post(route('ui.purchase-requests.store'), [
             'sppg_id' => $sppg->id,

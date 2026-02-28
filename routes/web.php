@@ -1,14 +1,22 @@
 <?php
 
+use App\Http\Controllers\Web\AuthWebController;
 use App\Http\Controllers\Web\ProcurementUiController;
 use App\Http\Controllers\ProcurementFlowController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return redirect()->route('ui.dashboard');
+    return view('welcome');
 });
 
-Route::prefix('ui')->name('ui.')->group(function () {
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthWebController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AuthWebController::class, 'login'])->name('login.attempt');
+});
+
+Route::post('/logout', [AuthWebController::class, 'logout'])->name('logout');
+
+Route::prefix('ui')->name('ui.')->middleware('auth')->group(function () {
     Route::get('/dashboard', [ProcurementUiController::class, 'dashboard'])->name('dashboard');
     Route::get('/purchase-requests', [ProcurementUiController::class, 'purchaseRequests'])->name('purchase-requests.index');
     Route::post('/purchase-requests', [ProcurementUiController::class, 'storePurchaseRequest'])->name('purchase-requests.store');
