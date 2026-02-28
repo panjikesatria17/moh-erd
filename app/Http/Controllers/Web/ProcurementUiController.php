@@ -4,19 +4,23 @@ namespace App\Http\Controllers\Web;
 
 use App\Enums\DocumentStatus;
 use App\Models\Approval;
+use App\Models\AuditTrail;
 use App\Models\BillingCycle;
 use App\Http\Controllers\Controller;
 use App\Models\Delivery;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Product;
+use App\Models\ProductCategory;
 use App\Models\ProductPriceHistory;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseRequest;
 use App\Models\Sppg;
 use App\Models\StockAlert;
+use App\Models\StockMovement;
 use App\Models\User;
 use App\Models\Vendor;
+use App\Models\VendorPerformance;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -107,6 +111,266 @@ class ProcurementUiController extends Controller
             ->paginate(15);
 
         return view('procurement.invoices.index', compact('invoices'));
+    }
+
+    public function masterSppgs(): View
+    {
+        $sppgs = Sppg::query()
+            ->with('defaultVendor')
+            ->orderByDesc('is_active')
+            ->orderBy('name')
+            ->paginate(15);
+
+        $vendors = Vendor::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        return view('procurement.master-data.sppgs.index', compact('sppgs', 'vendors'));
+    }
+
+    public function storeSppg(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'code' => ['required', 'string', 'max:30', 'unique:sppgs,code'],
+            'name' => ['required', 'string', 'max:255'],
+            'address' => ['nullable', 'string', 'max:1000'],
+            'default_vendor_id' => ['nullable', 'exists:vendors,id'],
+            'is_active' => ['nullable', 'boolean'],
+        ]);
+
+        Sppg::query()->create([
+            'code' => $validated['code'],
+            'name' => $validated['name'],
+            'address' => $validated['address'] ?? null,
+            'default_vendor_id' => $validated['default_vendor_id'] ?? null,
+            'is_active' => $request->boolean('is_active', true),
+        ]);
+
+        return redirect()
+            ->route('ui.master-data.sppgs.index')
+            ->with('success', 'Data SPPG berhasil ditambahkan.');
+    }
+
+    public function masterVendors(): View
+    {
+        $vendors = Vendor::query()
+            ->orderByDesc('is_active')
+            ->orderBy('name')
+            ->paginate(15);
+
+        return view('procurement.master-data.vendors.index', compact('vendors'));
+    }
+
+    public function storeVendor(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'code' => ['required', 'string', 'max:30', 'unique:vendors,code'],
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:50'],
+            'address' => ['nullable', 'string', 'max:1000'],
+            'is_affiliate' => ['nullable', 'boolean'],
+            'is_active' => ['nullable', 'boolean'],
+        ]);
+
+        Vendor::query()->create([
+            'code' => $validated['code'],
+            'name' => $validated['name'],
+            'email' => $validated['email'] ?? null,
+            'phone' => $validated['phone'] ?? null,
+            'address' => $validated['address'] ?? null,
+            'is_affiliate' => $request->boolean('is_affiliate', false),
+            'is_active' => $request->boolean('is_active', true),
+        ]);
+
+        return redirect()
+            ->route('ui.master-data.vendors.index')
+            ->with('success', 'Data vendor berhasil ditambahkan.');
+    }
+
+    public function masterProducts(): View
+    {
+        $products = Product::query()
+            ->with('category')
+            ->orderByDesc('is_active')
+            ->orderBy('name')
+            ->paginate(15);
+
+        $categories = ProductCategory::query()
+            ->orderBy('name')
+            ->get();
+
+        return view('procurement.master-data.products.index', compact('products', 'categories'));
+    }
+
+    public function storeProduct(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'sku' => ['required', 'string', 'max:50', 'unique:products,sku'],
+            'name' => ['required', 'string', 'max:255'],
+            'product_category_id' => ['required', 'exists:product_categories,id'],
+            'unit' => ['required', 'string', 'max:30'],
+            'government_price_cap' => ['nullable', 'numeric', 'min:0'],
+            'minimum_stock_level' => ['nullable', 'numeric', 'min:0'],
+            'reorder_stock_level' => ['nullable', 'numeric', 'min:0'],
+            'is_active' => ['nullable', 'boolean'],
+        ]);
+
+        Product::query()->create([
+            'sku' => $validated['sku'],
+            'name' => $validated['name'],
+            'product_category_id' => $validated['product_category_id'],
+            'unit' => $validated['unit'],
+            'government_price_cap' => $validated['government_price_cap'] ?? null,
+            'minimum_stock_level' => $validated['minimum_stock_level'] ?? 0,
+            'reorder_stock_level' => $validated['reorder_stock_level'] ?? 0,
+            'is_active' => $request->boolean('is_active', true),
+        ]);
+
+        return redirect()
+            ->route('ui.master-data.products.index')
+            ->with('success', 'Data produk berhasil ditambahkan.');
+    }
+
+    public function priceHistories(): View
+    {
+        $priceHistories = ProductPriceHistory::query()
+            ->with(['product', 'vendor', 'creator'])
+            ->orderByDesc('effective_at')
+            ->orderByDesc('id')
+            ->paginate(15);
+
+        $products = Product::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        $vendors = Vendor::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        return view('procurement.master-data.price-histories.index', compact('priceHistories', 'products', 'vendors'));
+    }
+
+    public function storePriceHistory(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'product_id' => ['required', 'exists:products,id'],
+            'vendor_id' => ['nullable', 'exists:vendors,id'],
+            'price' => ['required', 'numeric', 'min:0'],
+            'effective_at' => ['required', 'date'],
+        ]);
+
+        ProductPriceHistory::query()->create([
+            'product_id' => $validated['product_id'],
+            'vendor_id' => $validated['vendor_id'] ?? null,
+            'price' => $validated['price'],
+            'effective_at' => $validated['effective_at'],
+            'created_by' => auth()->id(),
+        ]);
+
+        return redirect()
+            ->route('ui.master-data.price-histories.index')
+            ->with('success', 'Riwayat harga berhasil ditambahkan.');
+    }
+
+    public function approvalQueue(): View
+    {
+        $approvals = Approval::query()
+            ->with(['approver', 'approvable'])
+            ->orderByRaw("CASE WHEN approved_at IS NULL THEN 0 ELSE 1 END")
+            ->latest('created_at')
+            ->paginate(20);
+
+        return view('procurement.approvals.index', compact('approvals'));
+    }
+
+    public function stockMovements(): View
+    {
+        $stockMovements = StockMovement::query()
+            ->with(['warehouse', 'product', 'creator'])
+            ->latest('movement_date')
+            ->paginate(20);
+
+        return view('procurement.inventory.stock-movements.index', compact('stockMovements'));
+    }
+
+    public function stockAlerts(): View
+    {
+        $stockAlerts = StockAlert::query()
+            ->with(['warehouse', 'product', 'resolver'])
+            ->orderBy('is_resolved')
+            ->latest('created_at')
+            ->paginate(20);
+
+        return view('procurement.inventory.stock-alerts.index', compact('stockAlerts'));
+    }
+
+    public function billingCycles(): View
+    {
+        $billingCycles = BillingCycle::query()
+            ->with(['sppg', 'creator'])
+            ->latest('week_start_date')
+            ->paginate(20);
+
+        return view('procurement.finance.billing-cycles.index', compact('billingCycles'));
+    }
+
+    public function payments(): View
+    {
+        $payments = Payment::query()
+            ->with(['invoice', 'payer'])
+            ->latest('payment_date')
+            ->paginate(20);
+
+        return view('procurement.finance.payments.index', compact('payments'));
+    }
+
+    public function usersRoles(): View
+    {
+        $users = User::query()
+            ->with(['sppg', 'vendor'])
+            ->latest('id')
+            ->paginate(20);
+
+        return view('procurement.master-data.users-roles.index', compact('users'));
+    }
+
+    public function vendorPerformances(): View
+    {
+        $performances = VendorPerformance::query()
+            ->with('vendor')
+            ->latest('period_end')
+            ->paginate(20);
+
+        return view('procurement.analytics.vendor-performances.index', compact('performances'));
+    }
+
+    public function priceTrends(): View
+    {
+        $trendRows = ProductPriceHistory::query()
+            ->select('product_id')
+            ->selectRaw('COUNT(*) as records_count')
+            ->selectRaw('MIN(price) as min_price')
+            ->selectRaw('MAX(price) as max_price')
+            ->selectRaw('AVG(price) as avg_price')
+            ->groupBy('product_id')
+            ->with('product')
+            ->paginate(20);
+
+        return view('procurement.analytics.price-trends.index', compact('trendRows'));
+    }
+
+    public function auditTrails(): View
+    {
+        $auditTrails = AuditTrail::query()
+            ->with('user')
+            ->latest('created_at')
+            ->paginate(20);
+
+        return view('procurement.analytics.audit-trails.index', compact('auditTrails'));
     }
 
     public function storePurchaseRequest(Request $request): RedirectResponse
