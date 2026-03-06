@@ -25,7 +25,7 @@ Route::prefix('ui')->name('ui.')->middleware('auth')->group(function () {
         Route::get('/purchase-requests/{purchaseRequest}/download', [ProcurementUiController::class, 'downloadPurchaseRequestPdf'])->name('purchase-requests.download');
     });
 
-    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::PURCHASING->value.','.UserRole::SPPG_USER->value)->group(function () {
+    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::SPPG_USER->value)->group(function () {
         Route::post('/purchase-requests', [ProcurementUiController::class, 'storePurchaseRequest'])->name('purchase-requests.store');
     });
 
@@ -55,8 +55,11 @@ Route::prefix('ui')->name('ui.')->middleware('auth')->group(function () {
         Route::get('/deliveries/{delivery}/surat-jalan', [ProcurementUiController::class, 'previewDeliveryNotePdf'])->name('deliveries.surat-jalan.preview');
     });
 
-    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::OWNER->value.','.UserRole::ADMIN_GUDANG->value.','.UserRole::SPPG_USER->value)->group(function () {
+    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::OWNER->value.','.UserRole::ADMIN_GUDANG->value.','.UserRole::SPPG_USER->value.','.UserRole::PURCHASING->value)->group(function () {
         Route::get('/rejected-items', [ProcurementUiController::class, 'rejectedItems'])->name('rejected-items.index');
+    });
+
+    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::OWNER->value.','.UserRole::ADMIN_GUDANG->value.','.UserRole::SPPG_USER->value)->group(function () {
         Route::post('/rejected-items', [ProcurementUiController::class, 'storeRejectedItem'])->name('rejected-items.store');
     });
 
@@ -79,7 +82,7 @@ Route::prefix('ui')->name('ui.')->middleware('auth')->group(function () {
         Route::get('/invoices-summary/download', [ProcurementUiController::class, 'downloadVendorInvoiceSummaryPdf'])->name('invoices.summary.download');
     });
 
-    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::OWNER->value.','.UserRole::FINANCE->value.','.UserRole::PURCHASING->value)->group(function () {
+    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::OWNER->value.','.UserRole::FINANCE->value)->group(function () {
         Route::get('/kwitansi', [ProcurementUiController::class, 'kwitansi'])->name('kwitansi.index');
         Route::get('/kwitansi/{kwitansi}/download', [ProcurementUiController::class, 'downloadKwitansiPdf'])->name('kwitansi.download');
         Route::get('/billing-cycles', [ProcurementUiController::class, 'billingCycles'])->name('billing-cycles.index');

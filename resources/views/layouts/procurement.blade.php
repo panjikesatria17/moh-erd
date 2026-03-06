@@ -131,6 +131,7 @@
                             \App\Enums\UserRole::OWNER->value,
                             \App\Enums\UserRole::ADMIN_GUDANG->value,
                             \App\Enums\UserRole::SPPG_USER->value,
+                            \App\Enums\UserRole::PURCHASING->value,
                         ]);
                         $canStockMovements = $hasRole([
                             \App\Enums\UserRole::SUPER_ADMIN->value,
@@ -154,7 +155,6 @@
                             \App\Enums\UserRole::SUPER_ADMIN->value,
                             \App\Enums\UserRole::OWNER->value,
                             \App\Enums\UserRole::FINANCE->value,
-                            \App\Enums\UserRole::PURCHASING->value,
                         ]);
                         $canPayments = $hasRole([
                             \App\Enums\UserRole::SUPER_ADMIN->value,

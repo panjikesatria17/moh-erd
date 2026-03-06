@@ -2183,6 +2183,60 @@ class ProcurementUiFlowTest extends TestCase
         $this->assertEquals($sppgUser->id, (int) $purchaseRequest->requested_by);
     }
 
+    public function test_purchasing_cannot_create_purchase_request(): void
+    {
+        $purchasing = User::query()->create([
+            'name' => 'Purchasing PR Blocked',
+            'email' => 'purchasing.pr.blocked@example.com',
+            'password' => 'password123',
+            'role' => UserRole::PURCHASING->value,
+        ]);
+
+        $vendor = Vendor::query()->create([
+            'code' => 'VN-PR-BLOCK-01',
+            'name' => 'Vendor PR Blocked',
+            'is_affiliate' => false,
+            'is_active' => true,
+        ]);
+
+        $sppg = Sppg::query()->create([
+            'code' => 'SPPG-PR-BLOCK-01',
+            'name' => 'SPPG PR Blocked',
+            'default_vendor_id' => $vendor->id,
+            'is_active' => true,
+        ]);
+
+        $category = ProductCategory::query()->create([
+            'name' => 'Kategori PR Blocked',
+        ]);
+
+        $product = Product::query()->create([
+            'sku' => 'PRD-PR-BLOCK-01',
+            'name' => 'Produk PR Blocked',
+            'product_category_id' => $category->id,
+            'unit' => 'kg',
+            'government_price_cap' => 12000,
+            'minimum_stock_level' => 1,
+            'reorder_stock_level' => 2,
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($purchasing)->post(route('ui.purchase-requests.store'), [
+            'sppg_id' => $sppg->id,
+            'needed_date' => now()->addDay()->toDateString(),
+            'notes' => 'Harus ditolak untuk purchasing',
+            'items' => [
+                [
+                    'product_id' => $product->id,
+                    'quantity' => 2,
+                    'requested_unit_price' => 10000,
+                ],
+            ],
+        ]);
+
+        $response->assertForbidden();
+    }
+
     public function test_purchasing_can_assign_requester_to_legacy_purchase_request(): void
     {
         $purchasing = User::query()->create([
@@ -3183,6 +3237,102 @@ class ProcurementUiFlowTest extends TestCase
         $response->assertDontSee('DLV-RJ-OTH');
     }
 
+    public function test_purchasing_can_view_rejected_items_report_but_cannot_store(): void
+    {
+        $purchasing = User::query()->create([
+            'name' => 'Purchasing Reject View',
+            'email' => 'purchasing.reject.view@example.com',
+            'password' => 'password123',
+            'role' => UserRole::PURCHASING->value,
+        ]);
+
+        $vendor = Vendor::query()->create([
+            'code' => 'VN-RJ-PRC-01',
+            'name' => 'Vendor Reject Purchasing',
+            'is_affiliate' => false,
+            'is_active' => true,
+        ]);
+
+        $sppg = Sppg::query()->create([
+            'code' => 'SPPG-RJ-PRC-01',
+            'name' => 'SPPG Reject Purchasing',
+            'default_vendor_id' => $vendor->id,
+            'is_active' => true,
+        ]);
+
+        $productCategory = ProductCategory::query()->create([
+            'name' => 'Kategori Reject Purchasing',
+        ]);
+
+        $product = Product::query()->create([
+            'sku' => 'PRD-RJ-PRC-01',
+            'name' => 'Produk Reject Purchasing',
+            'product_category_id' => $productCategory->id,
+            'unit' => 'kg',
+            'government_price_cap' => 15000,
+            'minimum_stock_level' => 1,
+            'reorder_stock_level' => 2,
+            'is_active' => true,
+        ]);
+
+        $purchaseOrder = PurchaseOrder::query()->create([
+            'number' => 'PO-RJ-PRC-01',
+            'sppg_id' => $sppg->id,
+            'vendor_id' => $vendor->id,
+            'order_date' => now()->toDateString(),
+            'status' => DocumentStatus::PROCESSED,
+            'is_direct_purchase' => false,
+            'total_amount' => 30000,
+        ]);
+
+        $purchaseOrderItem = $purchaseOrder->items()->create([
+            'product_id' => $product->id,
+            'quantity' => 3,
+            'unit_price' => 10000,
+            'subtotal' => 30000,
+        ]);
+
+        $delivery = \App\Models\Delivery::query()->create([
+            'number' => 'DLV-RJ-PRC-01',
+            'purchase_order_id' => $purchaseOrder->id,
+            'sppg_id' => $sppg->id,
+            'vendor_id' => $vendor->id,
+            'delivery_date' => now()->toDateString(),
+            'status' => DocumentStatus::DELIVERED,
+            'total_amount' => 30000,
+        ]);
+
+        \App\Models\RejectedItem::query()->create([
+            'delivery_id' => $delivery->id,
+            'purchase_order_item_id' => $purchaseOrderItem->id,
+            'product_id' => $product->id,
+            'reported_by' => null,
+            'quantity' => 1,
+            'reason' => 'Kemasan sobek',
+            'evidence_image_path' => 'rejected-items/evidence/sample.jpg',
+            'reported_at' => now()->toDateString(),
+        ]);
+
+        $indexResponse = $this->actingAs($purchasing)
+            ->get(route('ui.rejected-items.index', ['delivery_id' => $delivery->id]));
+
+        $indexResponse->assertOk();
+        $indexResponse->assertSee('DLV-RJ-PRC-01');
+        $indexResponse->assertSee('Lihat');
+        $indexResponse->assertDontSee('Input Barang Reject');
+
+        $storeResponse = $this->actingAs($purchasing)
+            ->post(route('ui.rejected-items.store'), [
+                'delivery_id' => $delivery->id,
+                'purchase_order_item_id' => $purchaseOrderItem->id,
+                'quantity' => 1,
+                'reason' => 'Harus ditolak',
+                'reported_at' => now()->toDateString(),
+            ]);
+
+        $storeResponse->assertForbidden();
+    }
+
     public function test_sppg_user_can_upload_payment_proof_for_own_sppg_payment(): void
     {
         Storage::fake('public');
@@ -3473,13 +3623,12 @@ class ProcurementUiFlowTest extends TestCase
         $this->get(route('ui.payments.index'))->assertForbidden();
     }
 
-    public function test_finance_owner_super_admin_and_purchasing_can_access_purchase_funding_requests_page(): void
+    public function test_finance_owner_and_super_admin_can_access_purchase_funding_requests_page(): void
     {
         $roles = [
             UserRole::SUPER_ADMIN->value,
             UserRole::FINANCE->value,
             UserRole::OWNER->value,
-            UserRole::PURCHASING->value,
         ];
 
         foreach ($roles as $index => $role) {
@@ -3498,12 +3647,23 @@ class ProcurementUiFlowTest extends TestCase
 
     public function test_non_allowed_roles_cannot_access_purchase_funding_requests_page(): void
     {
+        $purchasing = User::query()->create([
+            'name' => 'Purchasing Funding Blocked',
+            'email' => 'purchasing.funding.blocked@example.com',
+            'password' => 'password123',
+            'role' => UserRole::PURCHASING->value,
+        ]);
+
         $sppgUser = User::query()->create([
             'name' => 'SPPG Funding Blocked',
             'email' => 'sppg.funding.blocked@example.com',
             'password' => 'password123',
             'role' => UserRole::SPPG_USER->value,
         ]);
+
+        $this->actingAs($purchasing)
+            ->get(route('ui.purchase-funding-requests.index'))
+            ->assertForbidden();
 
         $this->actingAs($sppgUser)
             ->get(route('ui.purchase-funding-requests.index'))

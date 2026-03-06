@@ -4,6 +4,8 @@
 
 @section('content')
     @php
+        $currentRole = auth()->user()?->role?->value;
+        $canCreateRejectedItem = in_array($currentRole, ['super_admin', 'owner', 'admin_gudang', 'sppg_user'], true);
         $selectedDeliveryId = $selectedDeliveryId ?? null;
         $deliveryItemsMap = $deliveries
             ->mapWithKeys(function ($delivery) {
@@ -49,6 +51,7 @@
         </div>
     </form>
 
+    @if($canCreateRejectedItem)
     <form method="POST" action="{{ route('ui.rejected-items.store') }}" enctype="multipart/form-data" class="mb-5 rounded-xl border border-gray-200 bg-white p-4">
         @csrf
         <h3 class="mb-3 text-sm font-semibold text-gray-700">Input Barang Reject</h3>
@@ -108,6 +111,11 @@
             <button type="submit" class="rounded-md bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-700">Simpan Laporan Reject</button>
         </div>
     </form>
+    @else
+    <div class="mb-5 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
+        Role Anda hanya dapat melihat laporan barang reject dan lampiran bukti.
+    </div>
+    @endif
 
     <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
         <div class="overflow-x-auto">

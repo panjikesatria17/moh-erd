@@ -5,7 +5,7 @@
 @section('content')
     @php
         $currentRole = auth()->user()?->role?->value;
-        $canCreatePurchaseRequest = in_array($currentRole, ['super_admin', 'purchasing', 'sppg_user'], true);
+        $canCreatePurchaseRequest = in_array($currentRole, ['super_admin', 'sppg_user'], true);
         $canApprovePurchaseRequest = in_array($currentRole, ['super_admin', 'owner'], true);
         $canGeneratePurchaseOrder = in_array($currentRole, ['super_admin', 'purchasing'], true);
         $canAssignRequester = in_array($currentRole, ['super_admin', 'purchasing'], true);
