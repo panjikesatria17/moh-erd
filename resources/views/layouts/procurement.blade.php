@@ -20,6 +20,7 @@
         $currentRoleLabel = $roleLabels[$currentRoleValue] ?? 'Pengguna';
         $roleDescriptions = [
             \App\Enums\UserRole::SUPER_ADMIN->value => 'Kontrol penuh seluruh modul procurement HO.',
+            \App\Enums\UserRole::ADMIN->value => 'Kontrol operasional hampir setara super admin (tanpa kontrol program ON/OFF).',
             \App\Enums\UserRole::OWNER->value => 'Akses persetujuan strategis dan monitoring menyeluruh.',
             \App\Enums\UserRole::FINANCE->value => 'Fokus pada invoice, billing cycle, dan pembayaran.',
             \App\Enums\UserRole::PURCHASING->value => 'Fokus pada PR, PO, vendor, dan master pengadaan.',
@@ -100,7 +101,11 @@
             <aside class="lg:col-span-3">
                 <nav class="rounded-xl border border-gray-200 bg-white p-3">
                     @php
-                        $role = $currentRoleValue;
+                        $effectiveRole = $currentRoleValue === \App\Enums\UserRole::ADMIN->value
+                            ? \App\Enums\UserRole::SUPER_ADMIN->value
+                            : $currentRoleValue;
+
+                        $role = $effectiveRole;
                         $hasRole = static fn (array $allowedRoles): bool => in_array($role, $allowedRoles, true);
 
                         $canApproval = $hasRole([
@@ -170,7 +175,7 @@
                         $canUsersRoles = $hasRole([
                             \App\Enums\UserRole::SUPER_ADMIN->value,
                         ]);
-                        $canProgramControl = $canUsersRoles;
+                        $canProgramControl = $currentRoleValue === \App\Enums\UserRole::SUPER_ADMIN->value;
                         $canAuditTrail = $canApproval;
                         $canAnalytics = $hasRole([
                             \App\Enums\UserRole::SUPER_ADMIN->value,

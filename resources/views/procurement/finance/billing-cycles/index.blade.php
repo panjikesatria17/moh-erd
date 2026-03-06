@@ -18,7 +18,7 @@
                 </p>
                 <p class="text-xs text-amber-700">PO menunggu approval owner saat ini: {{ (int) ($pendingPoOwnerApprovals ?? 0) }}</p>
             </div>
-            @if(auth()->user()?->role?->value === \App\Enums\UserRole::SUPER_ADMIN->value)
+            @if(in_array(auth()->user()?->role?->value, [\App\Enums\UserRole::SUPER_ADMIN->value, \App\Enums\UserRole::ADMIN->value], true))
                 <a href="{{ route('ui.approvals.index') }}" class="inline-flex items-center rounded-md bg-amber-600 px-3 py-2 text-xs font-medium text-white hover:bg-amber-700">
                     Buka Approval Queue
                 </a>

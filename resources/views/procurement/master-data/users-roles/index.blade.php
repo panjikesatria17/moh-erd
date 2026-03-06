@@ -3,6 +3,11 @@
 @section('title', 'Users & Roles')
 
 @section('content')
+    @php
+        $currentRoleValue = auth()->user()?->role?->value;
+        $isAdminViewer = $currentRoleValue === \App\Enums\UserRole::ADMIN->value;
+    @endphp
+
     <div class="mb-4">
         <h2 class="text-xl font-semibold">Users & Roles</h2>
         <p class="text-sm text-gray-500">Daftar user, role, dan scope akses (SPPG/Vendor).</p>
@@ -37,6 +42,9 @@
                         <option value="{{ $role }}" @selected(old('role', $editUser?->role?->value ?? $editUser?->role) === $role)>{{ $roleLabels[$role] ?? $role }}</option>
                     @endforeach
                 </select>
+                @if($isAdminViewer)
+                    <p class="mt-1 text-[11px] text-amber-700">Role super admin disembunyikan untuk akun admin.</p>
+                @endif
             </div>
             <div>
                 <label id="sppg_scope_label" class="mb-1 block text-xs font-medium text-gray-600">SPPG (Opsional)</label>
@@ -97,13 +105,21 @@
                             <td class="px-4 py-3">{{ $user->sppg?->name ?? '-' }}</td>
                             <td class="px-4 py-3">{{ $user->vendor?->name ?? '-' }}</td>
                             <td class="px-4 py-3">
+                                @php
+                                    $targetRoleValue = $user->role?->value ?? $user->role;
+                                    $isProtectedSuperAdmin = $isAdminViewer && $targetRoleValue === \App\Enums\UserRole::SUPER_ADMIN->value;
+                                @endphp
                                 <div class="flex items-center justify-end gap-2">
-                                    <a href="{{ route('ui.users-roles.edit', $user) }}" class="rounded-md border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50">Edit</a>
-                                    <form method="POST" action="{{ route('ui.users-roles.destroy', $user) }}" onsubmit="return confirm('Hapus user ini?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="rounded-md border border-red-300 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-50">Hapus</button>
-                                    </form>
+                                    @if($isProtectedSuperAdmin)
+                                        <span class="rounded-md border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">Dilindungi</span>
+                                    @else
+                                        <a href="{{ route('ui.users-roles.edit', $user) }}" class="rounded-md border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50">Edit</a>
+                                        <form method="POST" action="{{ route('ui.users-roles.destroy', $user) }}" onsubmit="return confirm('Hapus user ini?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="rounded-md border border-red-300 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-50">Hapus</button>
+                                        </form>
+                                    @endif
                                 </div>
                             </td>
                         </tr>

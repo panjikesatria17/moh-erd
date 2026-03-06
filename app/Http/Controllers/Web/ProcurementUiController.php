@@ -3499,6 +3499,8 @@ class ProcurementUiController extends Controller
 
     public function usersRoles(Request $request): View
     {
+        $currentRole = Auth::user()?->role?->value;
+
         $users = User::query()
             ->with(['sppg', 'vendor'])
             ->latest('id')
@@ -3506,7 +3508,7 @@ class ProcurementUiController extends Controller
 
         $sppgs = Sppg::query()->where('is_active', true)->orderBy('name')->get();
         $vendors = Vendor::query()->where('is_active', true)->orderBy('name')->get();
-        $roleOptions = UserRole::values();
+        $roleOptions = $this->assignableRoleValuesFor($currentRole);
         $roleLabels = UserRole::labels();
 
         $editUser = null;
@@ -3587,11 +3589,14 @@ class ProcurementUiController extends Controller
 
     public function storeUserRole(Request $request): RedirectResponse
     {
+        $currentRole = Auth::user()?->role?->value;
+        $assignableRoles = $this->assignableRoleValuesFor($currentRole);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'role' => ['required', Rule::in(UserRole::values())],
+            'role' => ['required', Rule::in($assignableRoles)],
             'sppg_id' => [
                 Rule::requiredIf(fn () => $request->input('role') === UserRole::SPPG_USER->value),
                 'nullable',
@@ -3626,16 +3631,34 @@ class ProcurementUiController extends Controller
 
     public function editUserRole(User $user): RedirectResponse
     {
+        $currentRole = Auth::user()?->role?->value;
+        if ($currentRole === UserRole::ADMIN->value && ($user->role?->value ?? $user->role) === UserRole::SUPER_ADMIN->value) {
+            return redirect()
+                ->route('ui.users-roles.index')
+                ->withErrors(['edit_user' => 'Role admin tidak dapat mengubah akun super admin.']);
+        }
+
         return redirect()->route('ui.users-roles.index', ['edit' => $user->id]);
     }
 
     public function updateUserRole(Request $request, User $user): RedirectResponse
     {
+        $currentRole = Auth::user()?->role?->value;
+        $targetRole = $user->role?->value ?? $user->role;
+
+        if ($currentRole === UserRole::ADMIN->value && $targetRole === UserRole::SUPER_ADMIN->value) {
+            return redirect()
+                ->route('ui.users-roles.index')
+                ->withErrors(['update_user' => 'Role admin tidak dapat mengubah akun super admin.']);
+        }
+
+        $assignableRoles = $this->assignableRoleValuesFor($currentRole);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
-            'role' => ['required', Rule::in(UserRole::values())],
+            'role' => ['required', Rule::in($assignableRoles)],
             'sppg_id' => [
                 Rule::requiredIf(fn () => $request->input('role') === UserRole::SPPG_USER->value),
                 'nullable',
@@ -3675,6 +3698,13 @@ class ProcurementUiController extends Controller
 
     public function destroyUserRole(User $user): RedirectResponse
     {
+        $currentRole = Auth::user()?->role?->value;
+        if ($currentRole === UserRole::ADMIN->value && ($user->role?->value ?? $user->role) === UserRole::SUPER_ADMIN->value) {
+            return redirect()
+                ->route('ui.users-roles.index')
+                ->withErrors(['delete_user' => 'Role admin tidak dapat menghapus akun super admin.']);
+        }
+
         if ((int) (Auth::id() ?? 0) === (int) $user->id) {
             return redirect()
                 ->route('ui.users-roles.index')
@@ -4979,5 +5009,18 @@ class ProcurementUiController extends Controller
             'sppg_id' => null,
             'vendor_id' => null,
         ];
+    }
+
+    private function assignableRoleValuesFor(?string $currentRole): array
+    {
+        $roles = UserRole::values();
+        if ($currentRole !== UserRole::ADMIN->value) {
+            return $roles;
+        }
+
+        return array_values(array_filter(
+            $roles,
+            static fn (string $role): bool => $role !== UserRole::SUPER_ADMIN->value
+        ));
     }
 }

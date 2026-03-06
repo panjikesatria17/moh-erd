@@ -92,6 +92,20 @@ class ProgramControlTest extends TestCase
         ]);
     }
 
+    public function test_admin_cannot_access_program_control_page(): void
+    {
+        $admin = User::query()->create([
+            'name' => 'Admin No Program Control',
+            'email' => 'admin.no.program.control@example.com',
+            'password' => 'password123',
+            'role' => UserRole::ADMIN->value,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('ui.program-control.index'))
+            ->assertForbidden();
+    }
+
     public function test_non_super_admin_can_read_but_cannot_write_when_program_off_and_read_only_mode(): void
     {
         AppSetting::query()->updateOrCreate(

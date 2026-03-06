@@ -482,6 +482,56 @@ class ProcurementUiFlowTest extends TestCase
         $response->assertForbidden();
     }
 
+    public function test_admin_can_access_users_roles_page_but_super_admin_role_option_is_hidden(): void
+    {
+        $admin = User::query()->create([
+            'name' => 'Admin Role Manager',
+            'email' => 'admin.role.manager@example.com',
+            'password' => 'password123',
+            'role' => UserRole::ADMIN->value,
+        ]);
+
+        User::query()->create([
+            'name' => 'Existing Super Admin',
+            'email' => 'existing.super.admin@example.com',
+            'password' => 'password123',
+            'role' => UserRole::SUPER_ADMIN->value,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('ui.users-roles.index'));
+
+        $response->assertOk();
+        $response->assertSee('Users &amp; Roles', false);
+        $response->assertDontSee('value="super_admin"', false);
+        $response->assertDontSee('Program ON/OFF');
+    }
+
+    public function test_admin_cannot_delete_super_admin_account_from_users_roles(): void
+    {
+        $admin = User::query()->create([
+            'name' => 'Admin User Delete Guard',
+            'email' => 'admin.user.delete.guard@example.com',
+            'password' => 'password123',
+            'role' => UserRole::ADMIN->value,
+        ]);
+
+        $superAdmin = User::query()->create([
+            'name' => 'Super Admin Protected',
+            'email' => 'super.admin.protected@example.com',
+            'password' => 'password123',
+            'role' => UserRole::SUPER_ADMIN->value,
+        ]);
+
+        $response = $this->actingAs($admin)->delete(route('ui.users-roles.destroy', $superAdmin));
+
+        $response->assertRedirect(route('ui.users-roles.index'));
+        $response->assertSessionHasErrors(['delete_user']);
+        $this->assertDatabaseHas('users', [
+            'id' => $superAdmin->id,
+            'email' => 'super.admin.protected@example.com',
+        ]);
+    }
+
     public function test_can_store_sppg_with_signatory_names_from_master_page(): void
     {
         $superAdmin = User::query()->create([

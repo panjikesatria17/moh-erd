@@ -5,6 +5,7 @@ namespace App\Enums;
 enum UserRole: string
 {
     case SUPER_ADMIN = 'super_admin';
+    case ADMIN = 'admin';
     case OWNER = 'owner';
     case FINANCE = 'finance';
     case PURCHASING = 'purchasing';
@@ -22,6 +23,7 @@ enum UserRole: string
     {
         return [
             self::SUPER_ADMIN->value => 'Super Admin',
+            self::ADMIN->value => 'Admin',
             self::OWNER->value => 'Owner',
             self::FINANCE->value => 'Finance',
             self::PURCHASING->value => 'Purchasing',

@@ -13,7 +13,7 @@
         <h2 class="text-xl font-semibold">Approval Queue</h2>
         <p class="text-sm text-gray-500">Daftar antrian approval dokumen procurement lintas modul.</p>
 
-        @if(auth()->user()?->role?->value === \App\Enums\UserRole::SUPER_ADMIN->value)
+        @if(in_array(auth()->user()?->role?->value, [\App\Enums\UserRole::SUPER_ADMIN->value, \App\Enums\UserRole::ADMIN->value], true))
         <form method="POST" action="{{ route('ui.approvals.settings.po-threshold.update') }}" class="mt-3 flex flex-wrap items-end gap-2 rounded-lg border border-gray-200 bg-white p-3">
             @csrf
             <div class="w-full sm:w-auto">

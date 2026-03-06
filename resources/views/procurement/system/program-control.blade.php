@@ -74,7 +74,7 @@
                 >
             </div>
 
-            <div class="md:col-span-2">
+            <div class="mt-1 md:col-span-2">
                 <button
                     type="submit"
                     class="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
@@ -85,7 +85,7 @@
             </div>
         </form>
 
-        <div class="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+        <div class="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
             Gunakan mode ini untuk kontrol aktivasi sistem lintas yayasan. Untuk demo/marketing biasanya gunakan mode <strong>read-only</strong>, untuk lock total gunakan <strong>hard lock</strong>.
         </div>
     </div>
