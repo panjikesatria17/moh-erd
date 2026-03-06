@@ -14,6 +14,12 @@
             <h1 class="text-2xl font-bold text-gray-900">Program Sedang Dinonaktifkan</h1>
             <p class="mt-3 text-sm text-gray-600">{{ $message ?? 'Akses sementara dikunci oleh super admin. Silakan hubungi super admin untuk aktivasi kembali.' }}</p>
 
+            @if(!empty($readOnlyMode))
+                <div class="mt-4 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">
+                    Mode saat ini: <strong>Read Only</strong>. Anda dapat melihat data, namun tidak bisa melakukan aksi perubahan.
+                </div>
+            @endif
+
             <div class="mt-6 flex flex-wrap gap-2">
                 <a href="{{ route('logout') }}"
                    onclick="event.preventDefault(); document.getElementById('logout-form').submit();"

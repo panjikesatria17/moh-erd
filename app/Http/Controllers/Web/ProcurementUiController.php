@@ -3519,15 +3519,10 @@ class ProcurementUiController extends Controller
 
     public function programControl(): View
     {
-        $programEnabled = $this->isProgramEnabled();
-
-        $programSetting = AppSetting::query()
-            ->where('key', 'program_enabled')
-            ->first();
+        $programControlState = $this->getProgramControlState();
 
         return view('procurement.system.program-control', [
-            'programEnabled' => $programEnabled,
-            'programSetting' => $programSetting,
+            'programControlState' => $programControlState,
         ]);
     }
 
@@ -3535,18 +3530,59 @@ class ProcurementUiController extends Controller
     {
         $validated = $request->validate([
             'enabled' => ['required', 'boolean'],
+            'lock_mode' => ['required', Rule::in(['hard_lock', 'read_only'])],
+            'license_expires_at' => ['nullable', 'date'],
+            'license_grace_days' => ['nullable', 'integer', 'min:0', 'max:3650'],
         ]);
 
-        AppSetting::query()->updateOrCreate(
+        $oldState = $this->getProgramControlState();
+
+        $programEnabledSetting = AppSetting::query()->updateOrCreate(
             ['key' => 'program_enabled'],
             ['value' => (string) ($validated['enabled'] ? '1' : '0')]
         );
 
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'program_lock_mode'],
+            ['value' => (string) $validated['lock_mode']]
+        );
+
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'program_license_expires_at'],
+            ['value' => ! empty($validated['license_expires_at'])
+                ? Carbon::parse((string) $validated['license_expires_at'])->toDateTimeString()
+                : null]
+        );
+
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'program_license_grace_days'],
+            ['value' => (string) ((int) ($validated['license_grace_days'] ?? 0))]
+        );
+
+        $newState = $this->getProgramControlState();
+
+        $this->writeAudit($request, 'program-control.updated', $programEnabledSetting, [
+            'program_enabled' => $oldState['enabled'],
+            'program_lock_mode' => $oldState['lock_mode'],
+            'program_license_expires_at' => optional($oldState['license_expires_at'])->toDateTimeString(),
+            'program_license_grace_days' => $oldState['license_grace_days'],
+            'effective_enabled' => $oldState['effective_enabled'],
+            'effective_reason' => $oldState['effective_reason'],
+        ], [
+            'program_enabled' => $newState['enabled'],
+            'program_lock_mode' => $newState['lock_mode'],
+            'program_license_expires_at' => optional($newState['license_expires_at'])->toDateTimeString(),
+            'program_license_grace_days' => $newState['license_grace_days'],
+            'effective_enabled' => $newState['effective_enabled'],
+            'effective_reason' => $newState['effective_reason'],
+        ]);
+
+        $isEffectivelyEnabled = (bool) $newState['effective_enabled'];
         return redirect()
             ->route('ui.program-control.index')
-            ->with('success', $validated['enabled']
+            ->with('success', $isEffectivelyEnabled
                 ? 'Program berhasil diaktifkan. Semua akses kembali berjalan sesuai role.'
-                : 'Program berhasil dinonaktifkan. Semua role selain super admin akan terkunci.');
+                : 'Program tidak aktif. Role non-super-admin akan dibatasi sesuai mode lock.');
     }
 
     public function storeUserRole(Request $request): RedirectResponse
@@ -4505,17 +4541,59 @@ class ProcurementUiController extends Controller
         return (float) $storedValue;
     }
 
-    private function isProgramEnabled(): bool
+    private function getProgramControlState(): array
     {
-        $storedValue = AppSetting::query()
-            ->where('key', 'program_enabled')
-            ->value('value');
+        $settings = AppSetting::query()
+            ->whereIn('key', [
+                'program_enabled',
+                'program_lock_mode',
+                'program_license_expires_at',
+                'program_license_grace_days',
+            ])
+            ->pluck('value', 'key');
 
-        if ($storedValue === null || $storedValue === '') {
-            return true;
+        $enabledRaw = (string) ($settings['program_enabled'] ?? '1');
+        $enabled = filter_var($enabledRaw, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE) ?? true;
+
+        $lockMode = (string) ($settings['program_lock_mode'] ?? 'hard_lock');
+        if (! in_array($lockMode, ['hard_lock', 'read_only'], true)) {
+            $lockMode = 'hard_lock';
         }
 
-        return filter_var($storedValue, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE) ?? true;
+        $licenseExpiresAt = null;
+        $licenseExpiresAtRaw = $settings['program_license_expires_at'] ?? null;
+        if ($licenseExpiresAtRaw !== null && $licenseExpiresAtRaw !== '') {
+            try {
+                $licenseExpiresAt = Carbon::parse((string) $licenseExpiresAtRaw);
+            } catch (\Throwable) {
+                $licenseExpiresAt = null;
+            }
+        }
+
+        $graceDaysRaw = $settings['program_license_grace_days'] ?? null;
+        $licenseGraceDays = is_numeric($graceDaysRaw) ? max((int) $graceDaysRaw, 0) : 0;
+
+        $effectiveEnabled = $enabled;
+        $effectiveReason = $enabled ? 'enabled' : 'manual_disabled';
+        $effectiveDeadline = null;
+
+        if ($licenseExpiresAt !== null) {
+            $effectiveDeadline = $licenseExpiresAt->copy()->addDays($licenseGraceDays)->endOfDay();
+            if (now()->greaterThan($effectiveDeadline)) {
+                $effectiveEnabled = false;
+                $effectiveReason = 'license_expired';
+            }
+        }
+
+        return [
+            'enabled' => $enabled,
+            'lock_mode' => $lockMode,
+            'license_expires_at' => $licenseExpiresAt,
+            'license_grace_days' => $licenseGraceDays,
+            'effective_deadline' => $effectiveDeadline,
+            'effective_enabled' => $effectiveEnabled,
+            'effective_reason' => $effectiveReason,
+        ];
     }
 
     private function ensureSafeUploadedFile(

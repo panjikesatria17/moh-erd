@@ -32,6 +32,10 @@ class ProgramControlTest extends TestCase
             ['key' => 'program_enabled'],
             ['value' => '0']
         );
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'program_lock_mode'],
+            ['value' => 'hard_lock']
+        );
 
         $owner = User::query()->create([
             'name' => 'Owner Program Disabled',
@@ -52,6 +56,10 @@ class ProgramControlTest extends TestCase
             ['key' => 'program_enabled'],
             ['value' => '1']
         );
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'program_lock_mode'],
+            ['value' => 'hard_lock']
+        );
 
         $superAdmin = User::query()->create([
             'name' => 'Super Admin Program Control',
@@ -66,12 +74,83 @@ class ProgramControlTest extends TestCase
             ->assertSee('Kontrol Program Global');
 
         $this->actingAs($superAdmin)
-            ->post(route('ui.program-control.update'), ['enabled' => '0'])
+            ->post(route('ui.program-control.update'), [
+                'enabled' => '0',
+                'lock_mode' => 'read_only',
+                'license_expires_at' => now()->addDays(30)->toDateString(),
+                'license_grace_days' => 3,
+            ])
             ->assertRedirect(route('ui.program-control.index'));
 
         $this->assertDatabaseHas('app_settings', [
             'key' => 'program_enabled',
             'value' => '0',
         ]);
+        $this->assertDatabaseHas('app_settings', [
+            'key' => 'program_lock_mode',
+            'value' => 'read_only',
+        ]);
+    }
+
+    public function test_non_super_admin_can_read_but_cannot_write_when_program_off_and_read_only_mode(): void
+    {
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'program_enabled'],
+            ['value' => '0']
+        );
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'program_lock_mode'],
+            ['value' => 'read_only']
+        );
+
+        $purchasing = User::query()->create([
+            'name' => 'Purchasing Program ReadOnly',
+            'email' => 'purchasing.program.readonly@example.com',
+            'password' => 'password123',
+            'role' => UserRole::PURCHASING->value,
+        ]);
+
+        $this->actingAs($purchasing)
+            ->get(route('ui.purchase-orders.index'))
+            ->assertOk();
+
+        $this->actingAs($purchasing)
+            ->post(route('ui.program-control.update'), [
+                'enabled' => '1',
+                'lock_mode' => 'hard_lock',
+            ])
+            ->assertStatus(423);
+    }
+
+    public function test_license_expiry_and_grace_period_can_force_program_off(): void
+    {
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'program_enabled'],
+            ['value' => '1']
+        );
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'program_lock_mode'],
+            ['value' => 'hard_lock']
+        );
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'program_license_expires_at'],
+            ['value' => now()->subDays(5)->toDateTimeString()]
+        );
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'program_license_grace_days'],
+            ['value' => '2']
+        );
+
+        $owner = User::query()->create([
+            'name' => 'Owner Expired License',
+            'email' => 'owner.expired.license@example.com',
+            'password' => 'password123',
+            'role' => UserRole::OWNER->value,
+        ]);
+
+        $this->actingAs($owner)
+            ->get(route('ui.dashboard'))
+            ->assertStatus(423)
+            ->assertSee('masa lisensi sudah berakhir');
     }
 }
