@@ -170,6 +170,7 @@
                         $canUsersRoles = $hasRole([
                             \App\Enums\UserRole::SUPER_ADMIN->value,
                         ]);
+                        $canProgramControl = $canUsersRoles;
                         $canAuditTrail = $canApproval;
                         $canAnalytics = $hasRole([
                             \App\Enums\UserRole::SUPER_ADMIN->value,
@@ -273,6 +274,13 @@
                             @if($canAuditTrail)
                                 <a href="{{ route('ui.audit-trails.index') }}" class="mb-1 block rounded-md px-3 py-2 text-sm font-medium hover:bg-gray-100 {{ request()->routeIs('ui.audit-trails.*') ? 'bg-gray-100 text-blue-700' : 'text-gray-700' }}">Audit Trail</a>
                             @endif
+                        </div>
+                    @endif
+
+                    @if($canProgramControl)
+                        <div class="mb-2">
+                            <p class="mb-2 px-2 text-xs font-semibold uppercase tracking-wide text-gray-400">System Control</p>
+                            <a href="{{ route('ui.program-control.index') }}" class="mb-1 block rounded-md px-3 py-2 text-sm font-medium hover:bg-gray-100 {{ request()->routeIs('ui.program-control.*') ? 'bg-gray-100 text-blue-700' : 'text-gray-700' }}">Program ON/OFF</a>
                         </div>
                     @endif
 

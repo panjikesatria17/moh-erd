@@ -3517,6 +3517,38 @@ class ProcurementUiController extends Controller
         return view('procurement.master-data.users-roles.index', compact('users', 'sppgs', 'vendors', 'roleOptions', 'roleLabels', 'editUser'));
     }
 
+    public function programControl(): View
+    {
+        $programEnabled = $this->isProgramEnabled();
+
+        $programSetting = AppSetting::query()
+            ->where('key', 'program_enabled')
+            ->first();
+
+        return view('procurement.system.program-control', [
+            'programEnabled' => $programEnabled,
+            'programSetting' => $programSetting,
+        ]);
+    }
+
+    public function updateProgramControl(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'enabled' => ['required', 'boolean'],
+        ]);
+
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'program_enabled'],
+            ['value' => (string) ($validated['enabled'] ? '1' : '0')]
+        );
+
+        return redirect()
+            ->route('ui.program-control.index')
+            ->with('success', $validated['enabled']
+                ? 'Program berhasil diaktifkan. Semua akses kembali berjalan sesuai role.'
+                : 'Program berhasil dinonaktifkan. Semua role selain super admin akan terkunci.');
+    }
+
     public function storeUserRole(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -4471,6 +4503,19 @@ class ProcurementUiController extends Controller
         }
 
         return (float) $storedValue;
+    }
+
+    private function isProgramEnabled(): bool
+    {
+        $storedValue = AppSetting::query()
+            ->where('key', 'program_enabled')
+            ->value('value');
+
+        if ($storedValue === null || $storedValue === '') {
+            return true;
+        }
+
+        return filter_var($storedValue, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE) ?? true;
     }
 
     private function ensureSafeUploadedFile(

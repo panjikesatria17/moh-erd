@@ -17,7 +17,7 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [AuthWebController::class, 'logout'])->name('logout');
 
-Route::prefix('ui')->name('ui.')->middleware('auth')->group(function () {
+Route::prefix('ui')->name('ui.')->middleware(['auth', 'program.enabled'])->group(function () {
     Route::get('/dashboard', [ProcurementUiController::class, 'dashboard'])->name('dashboard');
 
     Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::OWNER->value.','.UserRole::PURCHASING->value.','.UserRole::SPPG_USER->value)->group(function () {
@@ -38,6 +38,8 @@ Route::prefix('ui')->name('ui.')->middleware('auth')->group(function () {
 
     Route::middleware('role:'.UserRole::SUPER_ADMIN->value)->group(function () {
         Route::post('/approvals/settings/po-threshold', [ProcurementUiController::class, 'updatePoOwnerApprovalThreshold'])->name('approvals.settings.po-threshold.update');
+        Route::get('/program-control', [ProcurementUiController::class, 'programControl'])->name('program-control.index');
+        Route::post('/program-control', [ProcurementUiController::class, 'updateProgramControl'])->name('program-control.update');
     });
 
     Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::OWNER->value.','.UserRole::PURCHASING->value.','.UserRole::VENDOR_ADMIN->value)->group(function () {
