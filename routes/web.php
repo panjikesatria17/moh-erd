@@ -79,7 +79,7 @@ Route::prefix('ui')->name('ui.')->middleware('auth')->group(function () {
         Route::get('/invoices-summary/download', [ProcurementUiController::class, 'downloadVendorInvoiceSummaryPdf'])->name('invoices.summary.download');
     });
 
-    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::OWNER->value.','.UserRole::FINANCE->value)->group(function () {
+    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::OWNER->value.','.UserRole::FINANCE->value.','.UserRole::PURCHASING->value)->group(function () {
         Route::get('/kwitansi', [ProcurementUiController::class, 'kwitansi'])->name('kwitansi.index');
         Route::get('/kwitansi/{kwitansi}/download', [ProcurementUiController::class, 'downloadKwitansiPdf'])->name('kwitansi.download');
         Route::get('/billing-cycles', [ProcurementUiController::class, 'billingCycles'])->name('billing-cycles.index');
@@ -87,6 +87,9 @@ Route::prefix('ui')->name('ui.')->middleware('auth')->group(function () {
         Route::get('/purchase-funding-requests/export', [ProcurementUiController::class, 'exportPurchaseFundingRequestsExcel'])->name('purchase-funding-requests.export');
         Route::get('/purchase-funding-requests/export-pdf', [ProcurementUiController::class, 'downloadPurchaseFundingRequestsPdf'])->name('purchase-funding-requests.export-pdf');
         Route::post('/purchase-funding-requests', [ProcurementUiController::class, 'storePurchaseFundingRequest'])->name('purchase-funding-requests.store');
+    });
+
+    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::OWNER->value.','.UserRole::FINANCE->value)->group(function () {
         Route::post('/purchase-funding-requests/{purchaseFundingRequest}/approve', [ProcurementUiController::class, 'approvePurchaseFundingRequest'])->name('purchase-funding-requests.approve');
         Route::post('/purchase-funding-requests/{purchaseFundingRequest}/reject', [ProcurementUiController::class, 'rejectPurchaseFundingRequest'])->name('purchase-funding-requests.reject');
     });

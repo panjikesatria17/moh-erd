@@ -154,6 +154,7 @@
                             \App\Enums\UserRole::SUPER_ADMIN->value,
                             \App\Enums\UserRole::OWNER->value,
                             \App\Enums\UserRole::FINANCE->value,
+                            \App\Enums\UserRole::PURCHASING->value,
                         ]);
                         $canPayments = $hasRole([
                             \App\Enums\UserRole::SUPER_ADMIN->value,
@@ -306,7 +307,7 @@
             </main>
         </div>
 
-        <footer class="mt-8 border-t border-slate-200/80 bg-white/90">
+        <footer class="sticky bottom-0 z-30 mt-auto border-t border-slate-200/80 bg-white/95 shadow-[0_-6px_18px_rgba(15,23,42,0.05)] backdrop-blur">
             <div class="mx-auto flex max-w-screen-2xl items-center justify-between px-6 py-2.5 text-xs text-slate-600">
                 <p>© 2026 Yayasan Satria Merah Putih</p>
                 <a href="https://c-projection.com">By C-projection</a>

@@ -3473,12 +3473,13 @@ class ProcurementUiFlowTest extends TestCase
         $this->get(route('ui.payments.index'))->assertForbidden();
     }
 
-    public function test_finance_owner_and_super_admin_can_access_purchase_funding_requests_page(): void
+    public function test_finance_owner_super_admin_and_purchasing_can_access_purchase_funding_requests_page(): void
     {
         $roles = [
             UserRole::SUPER_ADMIN->value,
             UserRole::FINANCE->value,
             UserRole::OWNER->value,
+            UserRole::PURCHASING->value,
         ];
 
         foreach ($roles as $index => $role) {
@@ -3497,23 +3498,12 @@ class ProcurementUiFlowTest extends TestCase
 
     public function test_non_allowed_roles_cannot_access_purchase_funding_requests_page(): void
     {
-        $purchasing = User::query()->create([
-            'name' => 'Purchasing Funding Blocked',
-            'email' => 'purchasing.funding.blocked@example.com',
-            'password' => 'password123',
-            'role' => UserRole::PURCHASING->value,
-        ]);
-
         $sppgUser = User::query()->create([
             'name' => 'SPPG Funding Blocked',
             'email' => 'sppg.funding.blocked@example.com',
             'password' => 'password123',
             'role' => UserRole::SPPG_USER->value,
         ]);
-
-        $this->actingAs($purchasing)
-            ->get(route('ui.purchase-funding-requests.index'))
-            ->assertForbidden();
 
         $this->actingAs($sppgUser)
             ->get(route('ui.purchase-funding-requests.index'))
