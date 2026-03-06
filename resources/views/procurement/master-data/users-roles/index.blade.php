@@ -42,9 +42,6 @@
                         <option value="{{ $role }}" @selected(old('role', $editUser?->role?->value ?? $editUser?->role) === $role)>{{ $roleLabels[$role] ?? $role }}</option>
                     @endforeach
                 </select>
-                @if($isAdminViewer)
-                    <p class="mt-1 text-[11px] text-amber-700">Role super admin disembunyikan untuk akun admin.</p>
-                @endif
             </div>
             <div>
                 <label id="sppg_scope_label" class="mb-1 block text-xs font-medium text-gray-600">SPPG (Opsional)</label>
