@@ -16,6 +16,7 @@
                         <th class="px-4 py-3">Tanggal</th>
                         <th class="px-4 py-3">Gudang</th>
                         <th class="px-4 py-3">Produk</th>
+                        <th class="px-4 py-3">Vendor</th>
                         <th class="px-4 py-3">Tipe</th>
                         <th class="px-4 py-3 text-right">Qty</th>
                         <th class="px-4 py-3 text-right">Balance</th>
@@ -28,6 +29,7 @@
                             <td class="px-4 py-3">{{ optional($movement->movement_date)->format('d M Y') }}</td>
                             <td class="px-4 py-3">{{ $movement->warehouse?->name ?? '-' }}</td>
                             <td class="px-4 py-3">{{ $movement->product?->name ?? '-' }}</td>
+                            <td class="px-4 py-3">{{ $movement->product?->vendor?->name ?? '-' }}</td>
                             <td class="px-4 py-3">{{ $movement->type?->value ?? '-' }}</td>
                             <td class="px-4 py-3 text-right">{{ number_format((float) $movement->quantity, 2, ',', '.') }}</td>
                             <td class="px-4 py-3 text-right">{{ number_format((float) $movement->balance_after, 2, ',', '.') }}</td>
@@ -35,7 +37,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-4 py-8 text-center text-gray-500">Belum ada data stock movement.</td>
+                            <td colspan="8" class="px-4 py-8 text-center text-gray-500">Belum ada data stock movement.</td>
                         </tr>
                     @endforelse
                 </tbody>

@@ -10,6 +10,7 @@ use App\Policies\DeliveryPolicy;
 use App\Policies\InvoicePolicy;
 use App\Policies\PurchaseOrderPolicy;
 use App\Policies\PurchaseRequestPolicy;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -28,6 +29,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Blade::directive('rupiah', function ($expression) {
+            return "<?php \$__rupiahValue = {$expression}; echo \$__rupiahValue === null || \$__rupiahValue === '' ? '-' : 'Rp&nbsp;'.rtrim(rtrim(number_format((float) \$__rupiahValue, 2, ',', '.'), '0'), ','); ?>";
+        });
+
         Gate::policy(PurchaseRequest::class, PurchaseRequestPolicy::class);
         Gate::policy(PurchaseOrder::class, PurchaseOrderPolicy::class);
         Gate::policy(Delivery::class, DeliveryPolicy::class);

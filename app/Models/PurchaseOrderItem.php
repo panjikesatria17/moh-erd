@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Models\RejectedItem;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PurchaseOrderItem extends Model
@@ -36,5 +38,10 @@ class PurchaseOrderItem extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function rejectedItems(): HasMany
+    {
+        return $this->hasMany(RejectedItem::class);
     }
 }

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\UserRole;
+use App\Http\Controllers\Api\Concerns\AppliesUserRoleScope;
 use App\Http\Controllers\Controller;
 use App\Models\PurchaseRequest;
 use Illuminate\Http\JsonResponse;
@@ -10,6 +10,8 @@ use Illuminate\Http\Request;
 
 class PurchaseRequestController extends Controller
 {
+    use AppliesUserRoleScope;
+
     public function index(Request $request): JsonResponse
     {
         $this->authorize('viewAny', PurchaseRequest::class);
@@ -18,11 +20,7 @@ class PurchaseRequestController extends Controller
             ->with(['sppg', 'requester', 'items.product'])
             ->latest('request_date');
 
-        $role = $request->user()?->role;
-
-        if ($role === UserRole::SPPG_USER || $role === UserRole::SPPG_USER->value) {
-            $query->where('sppg_id', $request->user()?->sppg_id);
-        }
+        $this->applySppgScopeForSppgUser($request, $query, 'sppg_id');
 
         $data = $query->paginate((int) $request->integer('per_page', 15));
 

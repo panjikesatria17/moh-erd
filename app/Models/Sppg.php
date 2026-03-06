@@ -21,6 +21,8 @@ class Sppg extends Model
     protected $fillable = [
         'code',
         'name',
+        'ka_sppg_name',
+        'accounting_name',
         'address',
         'default_vendor_id',
         'is_active',

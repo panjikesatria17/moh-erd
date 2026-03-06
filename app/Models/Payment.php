@@ -20,6 +20,11 @@ class Payment extends Model
         'status',
         'payment_method',
         'reference_no',
+        'proof_image_path',
+        'proof_uploaded_by',
+        'proof_uploaded_at',
+        'approved_by',
+        'approved_at',
         'paid_by',
         'notes',
     ];
@@ -30,6 +35,8 @@ class Payment extends Model
             'payment_date' => 'date',
             'amount' => 'decimal:2',
             'status' => PaymentStatus::class,
+            'proof_uploaded_at' => 'datetime',
+            'approved_at' => 'datetime',
         ];
     }
 
@@ -41,5 +48,15 @@ class Payment extends Model
     public function payer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'paid_by');
+    }
+
+    public function proofUploader(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'proof_uploaded_by');
+    }
+
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 }

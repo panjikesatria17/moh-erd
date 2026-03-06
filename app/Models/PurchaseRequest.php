@@ -27,6 +27,8 @@ class PurchaseRequest extends Model
         'needed_date',
         'status',
         'notes',
+        'is_additional',
+        'additional_to_po_id',
         'total_amount',
     ];
 
@@ -36,6 +38,7 @@ class PurchaseRequest extends Model
             'request_date' => 'date',
             'needed_date' => 'date',
             'status' => DocumentStatus::class,
+            'is_additional' => 'boolean',
             'total_amount' => 'decimal:2',
         ];
     }
@@ -63,6 +66,11 @@ class PurchaseRequest extends Model
     public function purchaseOrders(): HasMany
     {
         return $this->hasMany(PurchaseOrder::class);
+    }
+
+    public function additionalToPurchaseOrder(): BelongsTo
+    {
+        return $this->belongsTo(PurchaseOrder::class, 'additional_to_po_id');
     }
 
     public function recalculateTotal(): void

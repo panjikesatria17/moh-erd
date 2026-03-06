@@ -15,6 +15,7 @@
                     <tr>
                         <th class="px-4 py-3">Gudang</th>
                         <th class="px-4 py-3">Produk</th>
+                        <th class="px-4 py-3">Vendor</th>
                         <th class="px-4 py-3 text-right">Current</th>
                         <th class="px-4 py-3 text-right">Minimum</th>
                         <th class="px-4 py-3">Status</th>
@@ -26,6 +27,7 @@
                         <tr>
                             <td class="px-4 py-3">{{ $alert->warehouse?->name ?? '-' }}</td>
                             <td class="px-4 py-3">{{ $alert->product?->name ?? '-' }}</td>
+                            <td class="px-4 py-3">{{ $alert->product?->vendor?->name ?? '-' }}</td>
                             <td class="px-4 py-3 text-right">{{ number_format((float) $alert->current_balance, 2, ',', '.') }}</td>
                             <td class="px-4 py-3 text-right">{{ number_format((float) $alert->minimum_stock_level, 2, ',', '.') }}</td>
                             <td class="px-4 py-3">
@@ -37,7 +39,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-4 py-8 text-center text-gray-500">Belum ada stock alert.</td>
+                            <td colspan="7" class="px-4 py-8 text-center text-gray-500">Belum ada stock alert.</td>
                         </tr>
                     @endforelse
                 </tbody>

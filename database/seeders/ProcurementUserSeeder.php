@@ -17,7 +17,9 @@ class ProcurementUserSeeder extends Seeder
     public function run(): void
     {
         $sppg = Sppg::query()->where('code', 'SPPG-JKT-01')->first();
-        $vendor = Vendor::query()->where('code', 'VN-HO-01')->first();
+        $vendorDefault = Vendor::query()->where('code', 'VN-HO-01')->first();
+        $vendorPdMitra = Vendor::query()->where('code', 'VN-PDMU-01')->first();
+        $vendorPtSudirman = Vendor::query()->where('code', 'VN-PSGM-01')->first();
 
         $users = [
             [
@@ -28,46 +30,67 @@ class ProcurementUserSeeder extends Seeder
                 'vendor_id' => null,
             ],
             [
-                'name' => 'Owner Direksi',
+                'name' => 'Owner',
                 'email' => 'owner@ho.local',
                 'role' => UserRole::OWNER,
                 'sppg_id' => null,
                 'vendor_id' => null,
             ],
             [
-                'name' => 'Finance HO',
+                'name' => 'Finance',
                 'email' => 'finance@ho.local',
                 'role' => UserRole::FINANCE,
                 'sppg_id' => null,
                 'vendor_id' => null,
             ],
             [
-                'name' => 'Purchasing HO',
+                'name' => 'Purchasing',
                 'email' => 'purchasing@ho.local',
                 'role' => UserRole::PURCHASING,
                 'sppg_id' => null,
                 'vendor_id' => null,
             ],
             [
-                'name' => 'Admin Gudang HO',
+                'name' => 'Admin Gudang',
                 'email' => 'gudang@ho.local',
                 'role' => UserRole::ADMIN_GUDANG,
                 'sppg_id' => null,
                 'vendor_id' => null,
             ],
             [
-                'name' => 'User SPPG Jakarta 01',
+                'name' => 'Ekspedisi',
+                'email' => 'ekspedisi@ho.local',
+                'role' => UserRole::EXPEDITION,
+                'sppg_id' => null,
+                'vendor_id' => $vendorDefault?->id,
+            ],
+            [
+                'name' => 'SPPG User Jakarta 01',
                 'email' => 'sppg.jkt01@ho.local',
                 'role' => UserRole::SPPG_USER,
                 'sppg_id' => $sppg?->id,
                 'vendor_id' => null,
             ],
             [
-                'name' => 'Vendor Admin A',
+                'name' => 'Vendor Admin',
                 'email' => 'vendor.admin@ho.local',
                 'role' => UserRole::VENDOR_ADMIN,
                 'sppg_id' => null,
-                'vendor_id' => $vendor?->id,
+                'vendor_id' => $vendorDefault?->id,
+            ],
+            [
+                'name' => 'Vendor Admin PD Mitra',
+                'email' => 'vendor.pdmitra@ho.local',
+                'role' => UserRole::VENDOR_ADMIN,
+                'sppg_id' => null,
+                'vendor_id' => $vendorPdMitra?->id,
+            ],
+            [
+                'name' => 'Vendor Admin PT Sudirman',
+                'email' => 'vendor.sudirman@ho.local',
+                'role' => UserRole::VENDOR_ADMIN,
+                'sppg_id' => null,
+                'vendor_id' => $vendorPtSudirman?->id,
             ],
         ];
 

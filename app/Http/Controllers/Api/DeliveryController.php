@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\UserRole;
+use App\Http\Controllers\Api\Concerns\AppliesUserRoleScope;
 use App\Http\Controllers\Controller;
 use App\Models\Delivery;
 use Illuminate\Http\JsonResponse;
@@ -10,6 +10,8 @@ use Illuminate\Http\Request;
 
 class DeliveryController extends Controller
 {
+    use AppliesUserRoleScope;
+
     public function index(Request $request): JsonResponse
     {
         $this->authorize('viewAny', Delivery::class);
@@ -18,15 +20,8 @@ class DeliveryController extends Controller
             ->with(['purchaseOrder', 'goodsReceipt', 'sppg', 'vendor'])
             ->latest('delivery_date');
 
-        $role = $request->user()?->role;
-
-        if ($role === UserRole::SPPG_USER || $role === UserRole::SPPG_USER->value) {
-            $query->where('sppg_id', $request->user()?->sppg_id);
-        }
-
-        if ($role === UserRole::VENDOR_ADMIN || $role === UserRole::VENDOR_ADMIN->value) {
-            $query->where('vendor_id', $request->user()?->vendor_id);
-        }
+        $this->applySppgScopeForSppgUser($request, $query, 'sppg_id');
+        $this->applyVendorScopeForVendorAdmin($request, $query, 'vendor_id');
 
         $data = $query->paginate((int) $request->integer('per_page', 15));
 

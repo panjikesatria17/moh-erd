@@ -8,6 +8,24 @@
         <p class="text-sm text-gray-500">Siklus penagihan mingguan per SPPG untuk proses invoice/payment.</p>
     </div>
 
+    <div class="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <p class="text-sm font-semibold text-amber-900">Aturan Approval PO Aktif</p>
+                <p class="text-sm text-amber-800">
+                    PO di atas <span class="font-semibold">Rp {{ number_format((float) ($poOwnerApprovalThreshold ?? 5000000), 0, ',', '.') }}</span>
+                    wajib approval owner.
+                </p>
+                <p class="text-xs text-amber-700">PO menunggu approval owner saat ini: {{ (int) ($pendingPoOwnerApprovals ?? 0) }}</p>
+            </div>
+            @if(auth()->user()?->role?->value === \App\Enums\UserRole::SUPER_ADMIN->value)
+                <a href="{{ route('ui.approvals.index') }}" class="inline-flex items-center rounded-md bg-amber-600 px-3 py-2 text-xs font-medium text-white hover:bg-amber-700">
+                    Buka Approval Queue
+                </a>
+            @endif
+        </div>
+    </div>
+
     <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
