@@ -226,6 +226,7 @@ class ProcurementUiController extends Controller
             UserRole::FINANCE->value,
             UserRole::ADMIN_GUDANG->value,
             UserRole::PURCHASING->value,
+            UserRole::ADMIN->value,
         ], true);
 
         $showFundingSummaryMetrics = in_array($currentRole, [
@@ -491,6 +492,11 @@ class ProcurementUiController extends Controller
         $rows = $purchaseOrder->items->map(function ($item, $index) {
             $isAdHoc = (bool) ($item->product?->is_ad_hoc ?? false);
 
+            // Priority: user notes > ad-hoc indicator > dash
+            $itemNotes = trim($item->notes ?? '') !== ''
+                ? $item->notes
+                : ($isAdHoc ? 'Item non katalog / ad-hoc' : '-');
+
             return [
                 'no' => $index + 1,
                 'name' => ($item->product?->name ?? '-').($isAdHoc ? ' (NON KATALOG)' : ''),
@@ -498,7 +504,7 @@ class ProcurementUiController extends Controller
                 'unit' => $item->product?->unit ?? '-',
                 'unit_price' => (float) $item->unit_price,
                 'total_price' => (float) $item->subtotal,
-                'notes' => $isAdHoc ? 'Item non katalog / ad-hoc' : '-',
+                'notes' => $itemNotes,
                 'arrival_time' => '-',
             ];
         });
@@ -514,6 +520,8 @@ class ProcurementUiController extends Controller
             'senderAddress' => $purchaseOrder->sppg?->address,
             'creatorName' => $purchaseOrder->sppg?->accounting_name ?: $purchaseOrder->orderedBy?->name,
             'approverName' => $purchaseOrder->sppg?->ka_sppg_name ?: $purchaseOrder->purchaseRequest?->requester?->name,
+            'creatorId' => $purchaseOrder->ordered_by,
+            'approverId' => $purchaseOrder->purchaseRequest?->requester_id,
             'itemsRows' => $rows,
             'totalAmount' => (float) $purchaseOrder->total_amount,
             'notes' => $purchaseOrder->notes,
@@ -543,6 +551,11 @@ class ProcurementUiController extends Controller
         $rows = $purchaseRequest->items->map(function ($item, $index) {
             $isAdHoc = (bool) ($item->product?->is_ad_hoc ?? false);
 
+            // Priority: user notes > ad-hoc indicator > dash
+            $itemNotes = trim($item->notes ?? '') !== ''
+                ? $item->notes
+                : ($isAdHoc ? 'Item non katalog / ad-hoc' : '-');
+
             return [
                 'no' => $index + 1,
                 'name' => ($item->product?->name ?? '-').($isAdHoc ? ' (NON KATALOG)' : ''),
@@ -550,7 +563,7 @@ class ProcurementUiController extends Controller
                 'unit' => $item->product?->unit ?? '-',
                 'unit_price' => (float) $item->requested_unit_price,
                 'total_price' => (float) $item->subtotal,
-                'notes' => $isAdHoc ? 'Item non katalog / ad-hoc' : ($item->notes ?: '-'),
+                'notes' => $itemNotes,
                 'arrival_time' => '-',
             ];
         });
@@ -566,15 +579,39 @@ class ProcurementUiController extends Controller
             'senderAddress' => $purchaseRequest->sppg?->address,
             'creatorName' => $purchaseRequest->requester?->name,
             'approverName' => $primaryPo?->orderedBy?->name,
+            'creatorId' => $purchaseRequest->requester_id,
+            'approverId' => $primaryPo?->ordered_by,
             'itemsRows' => $rows,
             'totalAmount' => (float) $purchaseRequest->total_amount,
             'notes' => $purchaseRequest->notes,
-        ], $purchaseRequest->number.'.pdf');
+        ], $purchaseRequest->number.'.pdf', 'pr');
     }
 
-    private function renderProcurementDocumentPdf(array $payload, string $filename): Response
+    private function renderProcurementDocumentPdf(array $payload, string $filename, string $documentType = 'po'): Response
     {
-        $pdf = Pdf::loadView('procurement.purchase-orders.pdf', [
+        $template = $documentType === 'pr'
+            ? 'procurement.purchase-requests.pdf'
+            : 'procurement.purchase-orders.pdf';
+
+        $creatorSignature = null;
+        $approverSignature = null;
+
+        // Attempt to get signature images from creator and approver users
+        if (!empty($payload['creatorId'])) {
+            $creator = User::find($payload['creatorId']);
+            if ($creator && !empty($creator->signature_path) && file_exists(storage_path('app/' . $creator->signature_path))) {
+                $creatorSignature = 'data:image/png;base64,' . base64_encode(file_get_contents(storage_path('app/' . $creator->signature_path)));
+            }
+        }
+
+        if (!empty($payload['approverId'])) {
+            $approver = User::find($payload['approverId']);
+            if ($approver && !empty($approver->signature_path) && file_exists(storage_path('app/' . $approver->signature_path))) {
+                $approverSignature = 'data:image/png;base64,' . base64_encode(file_get_contents(storage_path('app/' . $approver->signature_path)));
+            }
+        }
+
+        $pdf = Pdf::loadView($template, [
             'documentTypeLabel' => $payload['documentTypeLabel'] ?? '-',
             'documentNumber' => $payload['documentNumber'] ?? '-',
             'referenceNumber' => $payload['referenceNumber'] ?? '-',
@@ -585,7 +622,9 @@ class ProcurementUiController extends Controller
             'senderAddress' => $payload['senderAddress'] ?? null,
             'creatorName' => $payload['creatorName'] ?? null,
             'approverName' => $payload['approverName'] ?? null,
-            'itemsRows' => $payload['itemsRows'] ?? collect(),
+            'creatorSignature' => $creatorSignature,
+            'approverSignature' => $approverSignature,
+            'rows' => $payload['itemsRows'] ?? collect(),
             'totalAmount' => $payload['totalAmount'] ?? 0,
             'documentNotes' => $payload['notes'] ?? null,
             'generatedAt' => now(),
@@ -1759,21 +1798,24 @@ class ProcurementUiController extends Controller
             'price_variance_percent',
             'price_variance_amount',
             'minimum_stock_level',
+            'total_inventory',
         ]);
 
-        $inventoryQtyByProduct = $this->getInventoryQuantityByProductIds($allFilteredProducts->pluck('id')->all());
+        // Ambil qty dari transaksi
+        $qtyTransaksiByProduct = $this->getInventoryQuantityByProductIds($allFilteredProducts->pluck('id')->all());
+        $inventoryQtyByProduct = [];
         $inventoryValueByProduct = [];
         $totalAssetValue = 0.0;
 
         foreach ($allFilteredProducts as $filteredProduct) {
             $productId = (int) $filteredProduct->id;
-            $qty = $this->resolveProductAssetQuantity(
-                $filteredProduct,
-                (float) ($inventoryQtyByProduct[$productId] ?? 0)
-            );
+            $qtyTransaksi = (float) ($qtyTransaksiByProduct[$productId] ?? 0);
+            $qtyMaster = (float) ($filteredProduct->total_inventory ?? 0);
+            $qty = $qtyTransaksi > 0 ? $qtyTransaksi : $qtyMaster;
             $unitPrice = $this->resolveProductReferencePrice($filteredProduct);
             $value = $qty * $unitPrice;
 
+            $inventoryQtyByProduct[$productId] = $qty;
             $inventoryValueByProduct[$productId] = $value;
             $totalAssetValue += $value;
         }
@@ -2010,6 +2052,8 @@ class ProcurementUiController extends Controller
             'selling_price',
             'government_price_cap',
             'price_variance_amount',
+            'pcs_per_box',
+            'pcs_per_pack',
         ]);
 
         $validated = $request->validate([
@@ -2018,6 +2062,9 @@ class ProcurementUiController extends Controller
             'product_category_id' => ['required', 'exists:product_categories,id'],
             'vendor_id' => ['required', 'exists:vendors,id'],
             'unit' => ['required', 'string', 'max:30'],
+            'pcs_per_box' => ['nullable', 'numeric', 'gt:0'],
+            'pcs_per_pack' => ['nullable', 'numeric', 'gt:0'],
+            'total_inventory' => ['nullable', 'numeric', 'min:0'],
             'purchase_price' => ['nullable', 'numeric', 'min:0'],
             'selling_price' => ['nullable', 'numeric', 'min:0'],
             'government_price_cap' => ['nullable', 'numeric', 'min:0'],
@@ -2034,6 +2081,9 @@ class ProcurementUiController extends Controller
             'product_category_id' => $validated['product_category_id'],
             'vendor_id' => $validated['vendor_id'],
             'unit' => $validated['unit'],
+            'pcs_per_box' => $validated['pcs_per_box'] ?? null,
+            'pcs_per_pack' => $validated['pcs_per_pack'] ?? null,
+            'total_inventory' => $validated['total_inventory'] ?? 0,
             'purchase_price' => $validated['purchase_price'] ?? null,
             'selling_price' => $validated['selling_price'] ?? null,
             'government_price_cap' => $validated['government_price_cap'] ?? null,
@@ -2061,6 +2111,8 @@ class ProcurementUiController extends Controller
             'selling_price',
             'government_price_cap',
             'price_variance_amount',
+            'pcs_per_box',
+            'pcs_per_pack',
         ]);
 
         $validated = $request->validate([
@@ -2069,6 +2121,9 @@ class ProcurementUiController extends Controller
             'product_category_id' => ['required', 'exists:product_categories,id'],
             'vendor_id' => ['required', 'exists:vendors,id'],
             'unit' => ['required', 'string', 'max:30'],
+            'pcs_per_box' => ['nullable', 'numeric', 'gt:0'],
+            'pcs_per_pack' => ['nullable', 'numeric', 'gt:0'],
+            'total_inventory' => ['nullable', 'numeric', 'min:0'],
             'purchase_price' => ['nullable', 'numeric', 'min:0'],
             'selling_price' => ['nullable', 'numeric', 'min:0'],
             'government_price_cap' => ['nullable', 'numeric', 'min:0'],
@@ -2085,6 +2140,9 @@ class ProcurementUiController extends Controller
             'product_category_id' => $validated['product_category_id'],
             'vendor_id' => $validated['vendor_id'],
             'unit' => $validated['unit'],
+            'pcs_per_box' => $validated['pcs_per_box'] ?? null,
+            'pcs_per_pack' => $validated['pcs_per_pack'] ?? null,
+            'total_inventory' => $validated['total_inventory'] ?? 0,
             'purchase_price' => $validated['purchase_price'] ?? null,
             'selling_price' => $validated['selling_price'] ?? null,
             'government_price_cap' => $validated['government_price_cap'] ?? null,
@@ -2132,6 +2190,8 @@ class ProcurementUiController extends Controller
             'vendor_code',
             'vendor',
             'unit',
+            'pcs_per_box',
+            'pcs_per_pack',
             'purchase_price',
             'selling_price',
             'government_price_cap',
@@ -2139,6 +2199,7 @@ class ProcurementUiController extends Controller
             'price_variance_amount',
             'minimum_stock_level',
             'reorder_stock_level',
+            'total_inventory', // qty
             'is_active',
         ];
 
@@ -2153,6 +2214,8 @@ class ProcurementUiController extends Controller
                 $product->vendor?->code,
                 $product->vendor?->name,
                 $product->unit,
+                (float) ($product->pcs_per_box ?? 0),
+                (float) ($product->pcs_per_pack ?? 0),
                 (float) ($product->purchase_price ?? 0),
                 (float) ($product->selling_price ?? 0),
                 (float) ($product->government_price_cap ?? 0),
@@ -2160,9 +2223,9 @@ class ProcurementUiController extends Controller
                 (float) ($product->price_variance_amount ?? 0),
                 (float) ($product->minimum_stock_level ?? 0),
                 (float) ($product->reorder_stock_level ?? 0),
+                (float) ($product->total_inventory ?? 0), // qty
                 $product->is_active ? 1 : 0,
             ], null, 'A'.$row);
-
             $row++;
         }
 
@@ -2334,6 +2397,8 @@ class ProcurementUiController extends Controller
                 'product_category_id' => $category->id,
                 'vendor_id' => $vendor->id,
                 'unit' => $unit,
+                'pcs_per_box' => $toNullableNumber($data['pcs_per_box'] ?? null),
+                'pcs_per_pack' => $toNullableNumber($data['pcs_per_pack'] ?? null),
                 'purchase_price' => $toNullableNumber($data['purchase_price'] ?? ($data['harga_beli'] ?? null)),
                 'selling_price' => $toNullableNumber($data['selling_price'] ?? ($data['harga_jual'] ?? null)),
                 'government_price_cap' => $toNullableNumber($data['government_price_cap'] ?? null),
@@ -2341,6 +2406,7 @@ class ProcurementUiController extends Controller
                 'price_variance_amount' => $toNullableNumber($data['price_variance_amount'] ?? null),
                 'minimum_stock_level' => $toNullableNumber($data['minimum_stock_level'] ?? null) ?? 0,
                 'reorder_stock_level' => $toNullableNumber($data['reorder_stock_level'] ?? null) ?? 0,
+                'total_inventory' => $toNullableNumber($data['total_inventory'] ?? null) ?? 0,
                 'is_active' => $toBoolean($data['is_active'] ?? null, true),
             ];
 
@@ -2551,8 +2617,18 @@ class ProcurementUiController extends Controller
 
             $approvable = $approval->approvable;
             if ($approvable && $this->hasStatusAttribute($approvable)) {
+                $newNotes = (string) ($approvable->notes ?? '');
+
+                // Remove approval pending message from notes
+                $newNotes = preg_replace(
+                    '/\s*\[MENUNGGU APPROVAL OWNER:[^\]]*\]/i',
+                    '',
+                    $newNotes
+                );
+
                 $approvable->update([
                     'status' => DocumentStatus::APPROVED,
+                    'notes' => trim($newNotes),
                 ]);
             }
 
@@ -3632,10 +3708,13 @@ class ProcurementUiController extends Controller
     public function editUserRole(User $user): RedirectResponse
     {
         $currentRole = Auth::user()?->role?->value;
-        if ($currentRole === UserRole::ADMIN->value && ($user->role?->value ?? $user->role) === UserRole::SUPER_ADMIN->value) {
+        if (
+            in_array($currentRole, [UserRole::ADMIN->value, UserRole::OWNER->value], true)
+            && ($user->role?->value ?? $user->role) === UserRole::SUPER_ADMIN->value
+        ) {
             return redirect()
                 ->route('ui.users-roles.index')
-                ->withErrors(['edit_user' => 'Role admin tidak dapat mengubah akun super admin.']);
+                ->withErrors(['edit_user' => 'Role admin/owner tidak dapat mengubah akun super admin.']);
         }
 
         return redirect()->route('ui.users-roles.index', ['edit' => $user->id]);
@@ -3646,10 +3725,13 @@ class ProcurementUiController extends Controller
         $currentRole = Auth::user()?->role?->value;
         $targetRole = $user->role?->value ?? $user->role;
 
-        if ($currentRole === UserRole::ADMIN->value && $targetRole === UserRole::SUPER_ADMIN->value) {
+        if (
+            in_array($currentRole, [UserRole::ADMIN->value, UserRole::OWNER->value], true)
+            && $targetRole === UserRole::SUPER_ADMIN->value
+        ) {
             return redirect()
                 ->route('ui.users-roles.index')
-                ->withErrors(['update_user' => 'Role admin tidak dapat mengubah akun super admin.']);
+                ->withErrors(['update_user' => 'Role admin/owner tidak dapat mengubah akun super admin.']);
         }
 
         $assignableRoles = $this->assignableRoleValuesFor($currentRole);
@@ -3699,10 +3781,13 @@ class ProcurementUiController extends Controller
     public function destroyUserRole(User $user): RedirectResponse
     {
         $currentRole = Auth::user()?->role?->value;
-        if ($currentRole === UserRole::ADMIN->value && ($user->role?->value ?? $user->role) === UserRole::SUPER_ADMIN->value) {
+        if (
+            in_array($currentRole, [UserRole::ADMIN->value, UserRole::OWNER->value], true)
+            && ($user->role?->value ?? $user->role) === UserRole::SUPER_ADMIN->value
+        ) {
             return redirect()
                 ->route('ui.users-roles.index')
-                ->withErrors(['delete_user' => 'Role admin tidak dapat menghapus akun super admin.']);
+                ->withErrors(['delete_user' => 'Role admin/owner tidak dapat menghapus akun super admin.']);
         }
 
         if ((int) (Auth::id() ?? 0) === (int) $user->id) {
@@ -3993,6 +4078,7 @@ class ProcurementUiController extends Controller
         $isSppgUser = $currentUser?->role?->value === UserRole::SPPG_USER->value;
 
         $validated = $request->validate([
+            'is_product_review_confirmed' => ['required', 'accepted'],
             'sppg_id' => ['required', 'exists:sppgs,id'],
             'vendor_id' => ['nullable', 'exists:vendors,id'],
             'needed_date' => ['nullable', 'date'],
@@ -4009,6 +4095,7 @@ class ProcurementUiController extends Controller
             'items.*.ad_hoc_unit' => ['nullable', 'string', 'max:30'],
             'items.*.quantity' => ['required', 'numeric', 'min:0.01'],
             'items.*.requested_unit_price' => ['nullable', 'numeric', 'min:0'],
+            'items.*.notes' => ['nullable', 'string'],
         ]);
 
         foreach ($validated['items'] as $index => $item) {
@@ -4111,6 +4198,7 @@ class ProcurementUiController extends Controller
                         'quantity' => $item['quantity'],
                         'requested_unit_price' => $requestedUnitPrice,
                         'subtotal' => $subtotal,
+                        'notes' => $item['notes'] ?? null,
                     ]);
                 }
 
@@ -4174,18 +4262,13 @@ class ProcurementUiController extends Controller
 
     public function generatePurchaseOrder(Request $request, PurchaseRequest $purchaseRequest): RedirectResponse
     {
-        $validated = $request->validate([
-            'vendor_id' => ['nullable', 'exists:vendors,id'],
-            'expected_date' => ['nullable', 'date'],
-        ]);
-
         if ($purchaseRequest->status !== DocumentStatus::APPROVED) {
             return redirect()
                 ->route('ui.purchase-requests.index')
                 ->withErrors(['po' => 'PR harus berstatus approved sebelum generate PO.']);
         }
 
-        $result = DB::transaction(function () use ($purchaseRequest, $validated) {
+        $result = DB::transaction(function () use ($purchaseRequest) {
             $purchaseRequest->loadMissing(['items.product', 'sppg', 'additionalToPurchaseOrder']);
 
             $additionalTargetPo = null;
@@ -4203,12 +4286,12 @@ class ProcurementUiController extends Controller
                 }
             }
 
+            // Auto use SPPG default vendor
             $vendorId = $additionalTargetPo?->vendor_id
-                ?? $validated['vendor_id']
                 ?? $purchaseRequest->sppg?->default_vendor_id;
 
             if (! $vendorId) {
-                throw new \RuntimeException('Vendor tidak tersedia untuk PR ini.');
+                throw new \RuntimeException('Vendor tidak tersedia untuk PR ini. Silakan set default vendor di SPPG.');
             }
 
             $orderedBy = User::query()->where('role', 'purchasing')->value('id');
@@ -4223,7 +4306,7 @@ class ProcurementUiController extends Controller
                     'vendor_id' => $vendorId,
                     'ordered_by' => $orderedBy,
                     'order_date' => now()->toDateString(),
-                    'expected_date' => $validated['expected_date'] ?? null,
+                    'expected_date' => null,
                     'status' => DocumentStatus::PROCESSED,
                     'is_direct_purchase' => false,
                     'notes' => 'Generated from UI dashboard',
@@ -4232,6 +4315,11 @@ class ProcurementUiController extends Controller
             }
 
             foreach ($purchaseRequest->items as $item) {
+                // Skip if product_id is null or doesn't exist (for ad-hoc items)
+                if ($item->product_id === null || !$item->product) {
+                    continue;
+                }
+
                 $latestPrice = ProductPriceHistory::query()
                     ->where('product_id', $item->product_id)
                     ->where(function ($query) use ($vendorId) {
@@ -4248,6 +4336,7 @@ class ProcurementUiController extends Controller
                     'quantity' => $item->quantity,
                     'unit_price' => $unitPrice,
                     'subtotal' => $subtotal,
+                    'notes' => $item->notes,
                 ]);
             }
 
@@ -5014,7 +5103,7 @@ class ProcurementUiController extends Controller
     private function assignableRoleValuesFor(?string $currentRole): array
     {
         $roles = UserRole::values();
-        if ($currentRole !== UserRole::ADMIN->value) {
+        if (! in_array($currentRole, [UserRole::ADMIN->value, UserRole::OWNER->value], true)) {
             return $roles;
         }
 

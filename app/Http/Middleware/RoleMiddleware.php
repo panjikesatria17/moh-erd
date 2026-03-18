@@ -31,7 +31,10 @@ class RoleMiddleware
             ? $user->role->value
             : (string) $user->role;
 
-        if ($currentRole === UserRole::ADMIN->value && $request->routeIs('ui.program-control.*')) {
+        if (
+            in_array($currentRole, [UserRole::ADMIN->value, UserRole::OWNER->value], true)
+            && $request->routeIs('ui.program-control.*', 'ui.users-roles.*')
+        ) {
             if ($request->expectsJson()) {
                 return new JsonResponse([
                     'message' => 'You do not have permission to access this resource.',
@@ -41,11 +44,11 @@ class RoleMiddleware
             abort(403);
         }
 
-        $effectiveRole = $currentRole === UserRole::ADMIN->value
-            ? UserRole::SUPER_ADMIN->value
-            : $currentRole;
+        $isOwnerOrAdmin = in_array($currentRole, [UserRole::ADMIN->value, UserRole::OWNER->value], true);
+        $isAllowed = in_array($currentRole, $allowedRoles, true)
+            || ($isOwnerOrAdmin && in_array(UserRole::SUPER_ADMIN->value, $allowedRoles, true));
 
-        if (! in_array($effectiveRole, $allowedRoles, true)) {
+        if (! $isAllowed) {
             if ($request->expectsJson()) {
                 return new JsonResponse([
                     'message' => 'You do not have permission to access this resource.',

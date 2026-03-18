@@ -20,7 +20,7 @@ Route::post('/logout', [AuthWebController::class, 'logout'])->name('logout');
 Route::prefix('ui')->name('ui.')->middleware(['auth', 'program.enabled'])->group(function () {
     Route::get('/dashboard', [ProcurementUiController::class, 'dashboard'])->name('dashboard');
 
-    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::OWNER->value.','.UserRole::PURCHASING->value.','.UserRole::SPPG_USER->value)->group(function () {
+    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::PURCHASING->value.','.UserRole::SPPG_USER->value)->group(function () {
         Route::get('/purchase-requests', [ProcurementUiController::class, 'purchaseRequests'])->name('purchase-requests.index');
         Route::get('/purchase-requests/{purchaseRequest}/download', [ProcurementUiController::class, 'downloadPurchaseRequestPdf'])->name('purchase-requests.download');
     });
@@ -29,7 +29,7 @@ Route::prefix('ui')->name('ui.')->middleware(['auth', 'program.enabled'])->group
         Route::post('/purchase-requests', [ProcurementUiController::class, 'storePurchaseRequest'])->name('purchase-requests.store');
     });
 
-    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::OWNER->value)->group(function () {
+    Route::middleware('role:'.UserRole::SUPER_ADMIN->value)->group(function () {
         Route::get('/approvals', [ProcurementUiController::class, 'approvalQueue'])->name('approvals.index');
         Route::post('/approvals/{approval}/approve', [ProcurementUiController::class, 'approveQueueItem'])->name('approvals.approve');
         Route::post('/approvals/{approval}/reject', [ProcurementUiController::class, 'rejectQueueItem'])->name('approvals.reject');
@@ -42,7 +42,7 @@ Route::prefix('ui')->name('ui.')->middleware(['auth', 'program.enabled'])->group
         Route::post('/program-control', [ProcurementUiController::class, 'updateProgramControl'])->name('program-control.update');
     });
 
-    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::OWNER->value.','.UserRole::PURCHASING->value.','.UserRole::VENDOR_ADMIN->value)->group(function () {
+    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::PURCHASING->value.','.UserRole::VENDOR_ADMIN->value)->group(function () {
         Route::get('/purchase-orders', [ProcurementUiController::class, 'purchaseOrders'])->name('purchase-orders.index');
         Route::get('/purchase-orders/{purchaseOrder}/download', [ProcurementUiController::class, 'downloadPurchaseOrderPdf'])->name('purchase-orders.download');
     });
@@ -52,20 +52,20 @@ Route::prefix('ui')->name('ui.')->middleware(['auth', 'program.enabled'])->group
         Route::post('/purchase-requests/{purchaseRequest}/generate-po', [ProcurementUiController::class, 'generatePurchaseOrder'])->name('purchase-requests.generate-po');
     });
 
-    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::OWNER->value.','.UserRole::ADMIN_GUDANG->value.','.UserRole::EXPEDITION->value.','.UserRole::VENDOR_ADMIN->value)->group(function () {
+    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::ADMIN_GUDANG->value.','.UserRole::EXPEDITION->value.','.UserRole::VENDOR_ADMIN->value)->group(function () {
         Route::get('/deliveries', [ProcurementUiController::class, 'deliveries'])->name('deliveries.index');
         Route::get('/deliveries/{delivery}/surat-jalan', [ProcurementUiController::class, 'previewDeliveryNotePdf'])->name('deliveries.surat-jalan.preview');
     });
 
-    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::OWNER->value.','.UserRole::ADMIN_GUDANG->value.','.UserRole::SPPG_USER->value.','.UserRole::PURCHASING->value)->group(function () {
+    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::ADMIN_GUDANG->value.','.UserRole::SPPG_USER->value.','.UserRole::PURCHASING->value)->group(function () {
         Route::get('/rejected-items', [ProcurementUiController::class, 'rejectedItems'])->name('rejected-items.index');
     });
 
-    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::OWNER->value.','.UserRole::ADMIN_GUDANG->value.','.UserRole::SPPG_USER->value)->group(function () {
+    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::ADMIN_GUDANG->value.','.UserRole::SPPG_USER->value)->group(function () {
         Route::post('/rejected-items', [ProcurementUiController::class, 'storeRejectedItem'])->name('rejected-items.store');
     });
 
-    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::OWNER->value.','.UserRole::ADMIN_GUDANG->value)->group(function () {
+    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::ADMIN_GUDANG->value)->group(function () {
         Route::get('/stock-movements', [ProcurementUiController::class, 'stockMovements'])->name('stock-movements.index');
         Route::get('/stock-alerts', [ProcurementUiController::class, 'stockAlerts'])->name('stock-alerts.index');
     });
@@ -78,13 +78,13 @@ Route::prefix('ui')->name('ui.')->middleware(['auth', 'program.enabled'])->group
         Route::post('/deliveries/{delivery}/complete', [ProcurementUiController::class, 'completeDeliveryByExpedition'])->name('deliveries.complete');
     });
 
-    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::OWNER->value.','.UserRole::FINANCE->value.','.UserRole::VENDOR_ADMIN->value)->group(function () {
+    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::FINANCE->value.','.UserRole::VENDOR_ADMIN->value)->group(function () {
         Route::get('/invoices', [ProcurementUiController::class, 'invoices'])->name('invoices.index');
         Route::get('/invoices/{invoice}/download', [ProcurementUiController::class, 'downloadInvoicePdf'])->name('invoices.download');
         Route::get('/invoices-summary/download', [ProcurementUiController::class, 'downloadVendorInvoiceSummaryPdf'])->name('invoices.summary.download');
     });
 
-    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::OWNER->value.','.UserRole::FINANCE->value)->group(function () {
+    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::FINANCE->value)->group(function () {
         Route::get('/kwitansi', [ProcurementUiController::class, 'kwitansi'])->name('kwitansi.index');
         Route::get('/kwitansi/{kwitansi}/download', [ProcurementUiController::class, 'downloadKwitansiPdf'])->name('kwitansi.download');
         Route::get('/billing-cycles', [ProcurementUiController::class, 'billingCycles'])->name('billing-cycles.index');
@@ -94,7 +94,7 @@ Route::prefix('ui')->name('ui.')->middleware(['auth', 'program.enabled'])->group
         Route::post('/purchase-funding-requests', [ProcurementUiController::class, 'storePurchaseFundingRequest'])->name('purchase-funding-requests.store');
     });
 
-    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::OWNER->value.','.UserRole::FINANCE->value)->group(function () {
+    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::FINANCE->value)->group(function () {
         Route::post('/purchase-funding-requests/{purchaseFundingRequest}/approve', [ProcurementUiController::class, 'approvePurchaseFundingRequest'])->name('purchase-funding-requests.approve');
         Route::post('/purchase-funding-requests/{purchaseFundingRequest}/reject', [ProcurementUiController::class, 'rejectPurchaseFundingRequest'])->name('purchase-funding-requests.reject');
     });
@@ -108,7 +108,7 @@ Route::prefix('ui')->name('ui.')->middleware(['auth', 'program.enabled'])->group
         Route::post('/purchase-funding-requests/{purchaseFundingRequest}/settle', [ProcurementUiController::class, 'settlePurchaseFundingRequest'])->name('purchase-funding-requests.settle');
     });
 
-    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::OWNER->value.','.UserRole::FINANCE->value.','.UserRole::SPPG_USER->value)->group(function () {
+    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::FINANCE->value.','.UserRole::SPPG_USER->value)->group(function () {
         Route::get('/payments', [ProcurementUiController::class, 'payments'])->name('payments.index');
     });
 
@@ -127,7 +127,7 @@ Route::prefix('ui')->name('ui.')->middleware(['auth', 'program.enabled'])->group
         Route::post('/deliveries/{delivery}/generate-invoice', [ProcurementUiController::class, 'generateInvoice'])->name('deliveries.generate-invoice');
     });
 
-    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::OWNER->value.','.UserRole::PURCHASING->value)->prefix('master-data')->name('master-data.')->group(function () {
+    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::PURCHASING->value)->prefix('master-data')->name('master-data.')->group(function () {
         Route::get('/sppgs', [ProcurementUiController::class, 'masterSppgs'])->name('sppgs.index');
         Route::get('/vendors', [ProcurementUiController::class, 'masterVendors'])->name('vendors.index');
         Route::get('/products', [ProcurementUiController::class, 'masterProducts'])->name('products.index');
@@ -171,11 +171,11 @@ Route::prefix('ui')->name('ui.')->middleware(['auth', 'program.enabled'])->group
         Route::delete('/users-roles/{user}', [ProcurementUiController::class, 'destroyUserRole'])->name('users-roles.destroy');
     });
 
-    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::OWNER->value)->group(function () {
+    Route::middleware('role:'.UserRole::SUPER_ADMIN->value)->group(function () {
         Route::get('/audit-trails', [ProcurementUiController::class, 'auditTrails'])->name('audit-trails.index');
     });
 
-    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::OWNER->value.','.UserRole::FINANCE->value.','.UserRole::PURCHASING->value)->group(function () {
+    Route::middleware('role:'.UserRole::SUPER_ADMIN->value.','.UserRole::FINANCE->value.','.UserRole::PURCHASING->value)->group(function () {
         Route::get('/vendor-performances', [ProcurementUiController::class, 'vendorPerformances'])->name('vendor-performances.index');
         Route::get('/price-trends', [ProcurementUiController::class, 'priceTrends'])->name('price-trends.index');
     });

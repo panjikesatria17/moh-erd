@@ -68,30 +68,32 @@
 
         .kwitansi-head {
             text-align: right;
+            width: 190px;
         }
 
         .kwitansi-title {
             background: #2f7d1f;
             color: #fff;
             font-weight: bold;
-            padding: 3px 10px;
-            text-align: right;
-            font-size: 13px;
+            padding: 5px 10px 4px;
+            text-align: center;
+            font-size: 12px;
             letter-spacing: .7px;
             text-transform: uppercase;
         }
 
         .meta {
             width: 100%;
-            margin-top: 4px;
+            margin-top: 0;
             border-collapse: collapse;
             border: 1px solid #000;
+            table-layout: fixed;
         }
 
         .meta td {
             border-bottom: 1px solid #000;
             font-size: 9px;
-            padding: 2px 4px;
+            padding: 2px 6px;
         }
 
         .meta tr:last-child td {
@@ -99,14 +101,21 @@
         }
 
         .meta-label {
-            width: 54px;
             font-weight: 700;
             text-transform: uppercase;
+            padding-top: 3px;
+            padding-bottom: 1px;
+            line-height: 1.2;
         }
 
-        .meta-sep {
-            width: 8px;
-            text-align: center;
+        .meta-value {
+            font-size: 10px;
+            font-weight: 700;
+            text-align: right;
+            padding-top: 1px;
+            padding-bottom: 3px;
+            letter-spacing: .2px;
+            line-height: 1.25;
         }
 
         .detail {
@@ -169,31 +178,8 @@
             font-size: 10px;
         }
 
-        .materai-box {
-            display: inline-block;
-            margin-top: 8px;
-            min-width: 128px;
-            border: 1px dashed #777;
-            border-radius: 4px;
-            padding: 4px 10px;
-            text-align: center;
-            font-size: 9px;
-            font-weight: 700;
-            color: #666;
-            background: transparent;
-            opacity: .58;
-        }
-
-        .materai-top {
-            font-size: 8px;
-            letter-spacing: .5px;
-            text-transform: uppercase;
-        }
-
-        .materai-value {
-            font-size: 12px;
-            line-height: 1.15;
-            margin-top: 1px;
+        .signature-gap {
+            height: 42px;
         }
 
         .signature-name {
@@ -225,18 +211,20 @@
                     <div class="vendor-name">{{ $vendor?->name ?? 'VENDOR' }}</div>
                     <p class="vendor-address">{{ strtoupper((string) ($vendor?->address ?? '-')) }}</p>
                 </td>
-                <td style="width: 22%;" class="kwitansi-head">
+                <td class="kwitansi-head">
                     <div class="kwitansi-title">KWITANSI</div>
                     <table class="meta">
                         <tr>
-                            <td class="meta-label">Nomor</td>
-                            <td class="meta-sep">:</td>
-                            <td>{{ $kwitansi->number }}</td>
+                            <td class="meta-label">Nomor :</td>
                         </tr>
                         <tr>
-                            <td class="meta-label">Tanggal</td>
-                            <td class="meta-sep">:</td>
-                            <td>{{ optional($kwitansi->receipt_date)->format('d F Y') }}</td>
+                            <td class="meta-value">{{ $kwitansi->number }}</td>
+                        </tr>
+                        <tr>
+                            <td class="meta-label">Tanggal :</td>
+                        </tr>
+                        <tr>
+                            <td class="meta-value">{{ optional($kwitansi->receipt_date)->format('d F Y') }}</td>
                         </tr>
                     </table>
                 </td>
@@ -281,10 +269,7 @@
 
         <div class="signature">
             <div>Yang Menerima,</div>
-            <div class="materai-box">
-                <div class="materai-top">Materai</div>
-                <div class="materai-value">10.000</div>
-            </div>
+            <div class="signature-gap"></div>
             <div class="signature-name">{{ $vendor?->name ?? '-' }}</div>
             <div class="signature-owner">{{ strtoupper((string) ($ownerName ?? 'OWNER')) }}</div>
         </div>

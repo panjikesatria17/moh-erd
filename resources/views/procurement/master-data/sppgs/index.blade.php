@@ -4,7 +4,7 @@
 
 @section('content')
     @php
-        $canManageMasterWrites = in_array(auth()->user()?->role?->value, [\App\Enums\UserRole::SUPER_ADMIN->value, \App\Enums\UserRole::ADMIN->value], true);
+        $canManageMasterWrites = in_array(auth()->user()?->role?->value, [\App\Enums\UserRole::SUPER_ADMIN->value, \App\Enums\UserRole::ADMIN->value, \App\Enums\UserRole::OWNER->value], true);
     @endphp
 
     <div class="mb-4 flex items-center justify-between">

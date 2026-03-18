@@ -16,8 +16,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+
 class Product extends Model
 {
+    use HasFactory, SoftDeletes;
+
+    // Nilai Inventory (otomatis)
+    public function getNilaiInventoryAttribute()
+    {
+        // Pastikan purchase_price dan total_inventory tidak null
+        return ($this->total_inventory ?? 0) * ($this->purchase_price ?? 0);
+    }
+
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
@@ -26,6 +36,8 @@ class Product extends Model
         'product_category_id',
         'vendor_id',
         'unit',
+        'pcs_per_box',
+        'pcs_per_pack',
         'purchase_price',
         'selling_price',
         'government_price_cap',
@@ -33,6 +45,7 @@ class Product extends Model
         'price_variance_amount',
         'minimum_stock_level',
         'reorder_stock_level',
+        'total_inventory', // qty
         'is_active',
         'is_ad_hoc',
     ];
@@ -45,6 +58,8 @@ class Product extends Model
             'selling_price' => 'decimal:2',
             'price_variance_percent' => 'decimal:2',
             'price_variance_amount' => 'decimal:2',
+            'pcs_per_box' => 'decimal:4',
+            'pcs_per_pack' => 'decimal:4',
             'minimum_stock_level' => 'decimal:2',
             'reorder_stock_level' => 'decimal:2',
             'is_active' => 'boolean',

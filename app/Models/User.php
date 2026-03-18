@@ -36,6 +36,7 @@ class User extends Authenticatable
         'role',
         'sppg_id',
         'vendor_id',
+        'signature_path',
     ];
 
     /**

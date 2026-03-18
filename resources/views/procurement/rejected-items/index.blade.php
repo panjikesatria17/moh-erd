@@ -5,7 +5,7 @@
 @section('content')
     @php
         $currentRole = auth()->user()?->role?->value;
-        $canCreateRejectedItem = in_array($currentRole, ['super_admin', 'owner', 'admin_gudang', 'sppg_user'], true);
+        $canCreateRejectedItem = in_array($currentRole, ['super_admin', 'owner', 'admin', 'admin_gudang', 'sppg_user'], true);
         $selectedDeliveryId = $selectedDeliveryId ?? null;
         $deliveryItemsMap = $deliveries
             ->mapWithKeys(function ($delivery) {

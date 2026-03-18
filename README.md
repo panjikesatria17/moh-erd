@@ -88,3 +88,54 @@ Role-based scenario siap pakai:
 - Di collection tersedia folder **Role Scenarios**.
 - Jalankan berurutan dari `1) Login as SPPG User` sampai `8) Generate Invoice as Finance` untuk simulasi flow lintas role.
 - Token per role otomatis disimpan ke variable collection: `sppg_token`, `owner_token`, `purchasing_token`, `finance_token`.
+
+## Deployment (ZIP + No Downtime)
+
+Build ZIP deploy bersih (tanpa `.git` dan `.env`):
+
+Windows (PowerShell):
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-deploy-zip.ps1
+```
+
+Linux/Git Bash:
+
+```bash
+bash scripts/build-deploy-zip.sh
+```
+
+Deploy di server Linux dengan pola `releases + current symlink`:
+
+```bash
+bash scripts/deploy-no-downtime.sh \
+	--archive /home/satriame/c-procurement-20260314-124958.zip \
+	--app-root /home/satriame/apps/c-procurement
+```
+
+Rollback ke release sebelumnya (1 perintah):
+
+```bash
+bash scripts/rollback-release.sh --app-root /home/satriame/apps/c-procurement
+```
+
+Rollback ke release tertentu:
+
+```bash
+bash scripts/rollback-release.sh \
+	--app-root /home/satriame/apps/c-procurement \
+	--release-name 20260314125958
+```
+
+Struktur folder hasil deploy:
+
+- `/home/satriame/apps/c-procurement/releases/<timestamp>`
+- `/home/satriame/apps/c-procurement/shared/.env`
+- `/home/satriame/apps/c-procurement/shared/storage`
+- `/home/satriame/apps/c-procurement/current` (symlink ke release aktif)
+
+Catatan:
+
+- Arahkan web root ke folder `current/public`.
+- Permission yang direkomendasikan: file `644`, folder `755`, dan `storage` + `bootstrap/cache` `775`.
+- Jika `composer` sudah dijalankan di pipeline CI, saat deploy bisa pakai `--skip-composer`.

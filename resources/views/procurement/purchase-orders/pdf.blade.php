@@ -6,9 +6,9 @@
     <style>
         body {
             font-family: DejaVu Sans, sans-serif;
-            font-size: 11px;
+            font-size: 10px;
             color: #000;
-            margin: 18px 24px;
+            margin: 12px 18px;
         }
 
         .sheet {
@@ -17,9 +17,9 @@
 
         .header {
             width: 100%;
-            border-bottom: 1px solid #000;
-            padding-bottom: 6px;
-            margin-bottom: 10px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
         }
 
         .header-table {
@@ -32,99 +32,143 @@
         }
 
         .logo-wrap {
-            width: 14%;
+            width: 15%;
             text-align: center;
+            padding: 0 5px;
         }
 
         .logo {
-            width: 82px;
-            height: 82px;
+            width: 110px;
+            height: 110px;
             object-fit: contain;
         }
 
         .header-center {
-            width: 72%;
+            width: 70%;
             text-align: center;
-            line-height: 1.25;
+            line-height: 1.3;
+            padding: 0 15px;
         }
 
         .header-title {
             font-weight: 700;
-            font-size: 11px;
+            font-size: 10px;
             text-transform: uppercase;
-            margin: 0;
+            margin: 0 0 2px;
+            letter-spacing: 0.5px;
         }
 
         .header-sppg {
             font-weight: 700;
-            font-size: 28px;
-            margin: 1px 0;
+            font-size: 26px;
+            margin: 2px 0;
             text-transform: uppercase;
+            line-height: 1.1;
         }
 
         .header-org {
             font-weight: 700;
-            font-size: 10px;
+            font-size: 9px;
             text-transform: uppercase;
-            margin: 0;
+            margin: 1px 0;
         }
 
         .header-address {
-            font-size: 10px;
+            font-size: 9px;
             margin: 0;
+            color: #333;
+        }
+
+        .doc-type {
+            text-align: center;
+            margin: 8px 0;
+            font-weight: 700;
+            font-size: 12px;
+            text-decoration: underline;
+            text-transform: uppercase;
+        }
+
+        .doc-info {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 8px 0;
+            font-size: 9px;
+        }
+
+        .doc-info-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            gap: 10px;
+        }
+
+        .info-left,
+        .info-right {
+            width: 45%;
+            font-size: 9px;
+        }
+
+        .info-left > div,
+        .info-right > div {
+            margin: 3px 0;
+            line-height: 1.4;
+        }
+
+        .info-label {
+            font-weight: 700;
+            display: inline-block;
+            width: 110px;
+            white-space: nowrap;
+        }
+
+        .info-sep {
+            display: inline-block;
+            margin: 0 4px;
+        }
+
+        .info-value {
+            display: inline;
+        }
+
+        .vendor-info {
+            margin: 8px 0;
+            font-size: 9px;
+            border: 1px solid #999;
+            padding: 6px;
+            background-color: #f5f5f5;
+        }
+
+        .vendor-info strong {
+            display: block;
+            margin-bottom: 3px;
+            text-decoration: underline;
         }
 
         .city-date {
             text-align: right;
-            margin: 2px 0 12px;
-        }
-
-        .meta {
-            margin-bottom: 12px;
-            line-height: 1.6;
-        }
-
-        .meta p {
-            margin: 0 0 6px;
-        }
-
-        .need-date {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 6px 0 0;
-        }
-
-        .need-date td {
-            padding: 0;
-            vertical-align: top;
-        }
-
-        .need-date .label {
-            width: 255px;
-        }
-
-        .need-date .sep {
-            width: 10px;
-            text-align: center;
+            margin-bottom: 4px;
+            font-weight: 600;
+            font-size: 9px;
         }
 
         table.grid {
-            width: 76%;
-            margin: 0 auto;
+            width: 100%;
+            margin: 8px 0;
             border-collapse: collapse;
         }
 
         .grid th,
         .grid td {
             border: 1px solid #000;
-            padding: 1px 3px;
-            font-size: 10px;
+            padding: 4px 3px;
+            font-size: 9px;
             line-height: 1.2;
         }
 
         .grid th {
             text-align: center;
             font-weight: 700;
+            background-color: #e8e8e8;
         }
 
         .text-center { text-align: center; }
@@ -134,24 +178,89 @@
             white-space: nowrap;
         }
 
-        .closing {
-            margin: 14px 0 0;
-            line-height: 1.5;
+        .notes-section {
+            margin: 8px 0;
+            font-size: 9px;
         }
 
-        .signature {
-            margin-top: 10px;
+        .notes-section strong {
+            display: block;
+            margin-bottom: 3px;
+            text-decoration: underline;
+        }
+
+        .notes-box {
+            border: 1px solid #999;
+            padding: 4px;
+            min-height: 30px;
+            background-color: #fafafa;
+        }
+
+        .signature-section {
+            margin-top: 12px;
+            font-size: 8px;
+        }
+
+        .signature-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .signature-col-left,
+        .signature-col-center,
+        .signature-col-right {
             text-align: center;
-            line-height: 1.4;
+            vertical-align: top;
+            padding: 0 10px;
         }
 
-        .signature-space {
-            height: 68px;
+        .signature-col-left {
+            width: 32%;
+        }
+
+        .signature-col-center {
+            width: 4%;
+        }
+
+        .signature-col-right {
+            width: 32%;
+        }
+
+        .signature-label {
+            margin-bottom: 4px;
+            font-weight: 700;
+        }
+
+        .signature-image-area {
+            height: 50px;
+            margin-bottom: 4px;
+            border-bottom: 1px solid #000;
+            position: relative;
+        }
+
+        .signature-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
         }
 
         .signature-name {
             font-weight: 700;
-            text-decoration: underline;
+            font-size: 8px;
+            margin: 3px 0;
+        }
+
+        .signature-title {
+            font-size: 7px;
+            color: #666;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 8px;
+            border-top: 1px solid #000;
+            padding-top: 4px;
         }
     </style>
 </head>
@@ -159,16 +268,6 @@
     @php
         $docDate = $documentDate ? \Illuminate\Support\Carbon::parse($documentDate) : $generatedAt;
         $needDate = $neededDate ? \Illuminate\Support\Carbon::parse($neededDate) : $docDate;
-
-        $dayMap = [
-            'Monday' => 'Senin',
-            'Tuesday' => 'Selasa',
-            'Wednesday' => 'Rabu',
-            'Thursday' => 'Kamis',
-            'Friday' => 'Jumat',
-            'Saturday' => 'Sabtu',
-            'Sunday' => 'Minggu',
-        ];
 
         $monthMap = [
             1 => 'Januari',
@@ -185,16 +284,17 @@
             12 => 'Desember',
         ];
 
-        $needDay = $dayMap[$needDate->format('l')] ?? $needDate->format('l');
+        $docDateLabel = $docDate->format('d').' '.($monthMap[(int) $docDate->format('n')] ?? $docDate->format('F')).' '.$docDate->format('Y');
         $needDateLabel = $needDate->format('d').' '.($monthMap[(int) $needDate->format('n')] ?? $needDate->format('F')).' '.$needDate->format('Y');
-        $cityDate = 'Bogor, '.$generatedAt->format('d').' '.($monthMap[(int) $generatedAt->format('n')] ?? $generatedAt->format('F')).' '.$generatedAt->format('Y');
+        $generatedDateLabel = $generatedAt->format('d').' '.($monthMap[(int) $generatedAt->format('n')] ?? $generatedAt->format('F')).' '.$generatedAt->format('Y');
 
-        $rows = collect($itemsRows ?? []);
-        $minimumRows = 16;
+        $rows = collect($rows ?? []);
+        $minimumRows = 12;
         $blankRows = max(0, $minimumRows - $rows->count());
     @endphp
 
     <div class="sheet">
+        <!-- Header -->
         <div class="header">
             <table class="header-table">
                 <tr>
@@ -204,9 +304,9 @@
                         @endif
                     </td>
                     <td class="header-center">
-                        <p class="header-title">SATUAN PELAYANAN PEMENUHAN GIZI (SPPG)</p>
+                        <p class="header-title">Satuan Pelayanan Pemenuhan Gizi</p>
                         <p class="header-sppg">{{ strtoupper($senderName ?? '-') }}</p>
-                        <p class="header-org">YAYASAN SATRIA MERAH PUTIH</p>
+                        <p class="header-org">Yayasan Satria Merah Putih</p>
                         <p class="header-address">{{ $senderAddress ?? '-' }}</p>
                     </td>
                     <td class="logo-wrap">
@@ -220,29 +320,66 @@
             </table>
         </div>
 
-        <p class="city-date">{{ $cityDate }}</p>
+        <!-- Document Type -->
+        <p class="doc-type">Pesanan Pembelian / Purchase Order</p>
 
-        <div class="meta">
-            <p>Kepada Yth, Mitra</p>
-            <p>Kami dari {{ $senderName ?? '-' }} ingin mengajukan pembelian bahan baku yang akan kami gunakan:</p>
-            <table class="need-date">
-                <tr>
-                    <td class="label">Hari, Tanggal Kebutuhan</td>
-                    <td class="sep">:</td>
-                    <td>{{ $needDay }}, {{ $needDateLabel }}</td>
-                </tr>
-            </table>
+        <!-- Document Information -->
+        <div class="doc-info-row">
+            <div class="info-left">
+                <div>
+                    <span class="info-label">Nomor PO</span>
+                    <span class="info-sep">:</span>
+                    <span class="info-value"><strong>{{ $documentNumber ?? '-' }}</strong></span>
+                </div>
+                <div>
+                    <span class="info-label">Tanggal PO</span>
+                    <span class="info-sep">:</span>
+                    <span class="info-value">{{ $docDateLabel }}</span>
+                </div>
+                <div>
+                    <span class="info-label">Tanggal Kebutuhan</span>
+                    <span class="info-sep">:</span>
+                    <span class="info-value">{{ $needDateLabel }}</span>
+                </div>
+            </div>
+            <div class="info-right">
+                <div>
+                    <span class="info-label">Ref. PR</span>
+                    <span class="info-sep">:</span>
+                    <span class="info-value">{{ $referenceNumber ?? '-' }}</span>
+                </div>
+                <div>
+                    <span class="info-label">Pesan Kepada</span>
+                    <span class="info-sep">:</span>
+                    <span class="info-value">{{ $recipientName ?? '-' }}</span>
+                </div>
+                <div>
+                    <span class="info-label">Penanggung Jawab</span>
+                    <span class="info-sep">:</span>
+                    <span class="info-value">{{ $creatorName ?? '-' }}</span>
+                </div>
+            </div>
         </div>
 
+        <!-- Vendor Information Box -->
+        <div class="vendor-info">
+            <strong>Informasi Pesanan:</strong>
+            <div>Vendor: {{ $recipientName ?? '-' }}</div>
+            <div>Dari: {{ $senderName ?? '-' }}</div>
+            <div>Pemesan: {{ $creatorName ?? '-' }}</div>
+        </div>
+
+        <!-- Items Table -->
         <table class="grid">
             <thead>
                 <tr>
-                    <th style="width: 5%;">No</th>
-                    <th style="width: 37%;">Jenis Bahan</th>
-                    <th style="width: 12%;">Q</th>
-                    <th style="width: 13%;">Satuan</th>
-                    <th style="width: 16%;">Harga Mitra</th>
-                    <th style="width: 17%;">Total Harga</th>
+                    <th style="width: 4%;">No</th>
+                    <th style="width: 35%;">Nama Item / Deskripsi</th>
+                    <th style="width: 10%;">Qty</th>
+                    <th style="width: 11%;">Satuan</th>
+                    <th style="width: 14%;">Harga Unit</th>
+                    <th style="width: 14%;">Subtotal</th>
+                    <th style="width: 12%;">Keterangan</th>
                 </tr>
             </thead>
             <tbody>
@@ -252,8 +389,9 @@
                         <td>{{ $row['name'] ?? '-' }}</td>
                         <td class="text-right">{{ rtrim(rtrim(number_format((float) ($row['qty'] ?? 0), 2, ',', '.'), '0'), ',') }}</td>
                         <td class="text-center">{{ $row['unit'] ?? '-' }}</td>
-                        <td class="text-right rp-cell">Rp {{ number_format((float) ($row['unit_price'] ?? 0), 2, ',', '.') }}</td>
-                        <td class="text-right rp-cell">Rp {{ number_format((float) ($row['total_price'] ?? 0), 2, ',', '.') }}</td>
+                        <td class="text-right rp-cell">Rp {{ number_format((float) ($row['unit_price'] ?? 0), 0, ',', '.') }}</td>
+                        <td class="text-right rp-cell">Rp {{ number_format((float) ($row['total_price'] ?? 0), 0, ',', '.') }}</td>
+                        <td style="font-size: 8px;">{{ $row['notes'] ?? '-' }}</td>
                     </tr>
                 @endforeach
 
@@ -265,23 +403,59 @@
                         <td></td>
                         <td></td>
                         <td></td>
+                        <td></td>
                     </tr>
                 @endfor
 
-                <tr>
-                    <td colspan="5"></td>
-                    <td class="text-right rp-cell" style="font-weight:700;">Rp {{ number_format((float) $totalAmount, 2, ',', '.') }}</td>
+                <tr style="font-weight: 700; background-color: #e8e8e8;">
+                    <td colspan="5" class="text-right">TOTAL:</td>
+                    <td class="text-right rp-cell">Rp {{ number_format((float) $totalAmount, 0, ',', '.') }}</td>
+                    <td></td>
                 </tr>
             </tbody>
         </table>
 
-        <p class="closing">Demikian permohonan kami sampaikan, harap dapat dipenuhi dan dikirim tepat waktu.</p>
+        <!-- Approval Request Section -->
+        <div style="margin: 8px 0; padding: 8px; background-color: #f9f9f9; border-left: 3px solid #0066cc; font-size: 9px; line-height: 1.4; color: #333;">
+            <strong>Permohonan Persetujuan:</strong> Mohon di setujui pengajuan tersebut sesuai dengan permintaan kami "{{ $creatorName ?? 'User Purchasing' }}" dan kami ucapkan terima kasih.
+        </div>
 
-        <div class="signature">
-            <div>Dibuat</div>
-            <div class="signature-space"></div>
-            <div class="signature-name">{{ $creatorName ?: 'Operator SPPG' }}</div>
-            <div>PLOK</div>
+        <!-- Signature Section -->
+        <div class="signature-section">
+            <table class="signature-table">
+                <tr>
+                    <td class="signature-col-left">
+                        <div class="signature-label">Dibuat Oleh,</div>
+                        <div class="signature-image-area">
+                            @if(!empty($creatorSignature))
+                                <img src="{{ $creatorSignature }}" alt="Tanda Tangan" class="signature-image">
+                            @endif
+                        </div>
+                        <div class="signature-name">{{ $creatorName ?: 'Operator' }}</div>
+                        <div class="signature-title">Ginan Akuntansi</div>
+                    </td>
+                    <td class="signature-col-center"></td>
+                    <td class="signature-col-right">
+                        <div class="signature-label">Disetujui Oleh,</div>
+                        <div class="signature-image-area">
+                            @if(!empty($approverSignature))
+                                <img src="{{ $approverSignature }}" alt="Tanda Tangan" class="signature-image">
+                            @endif
+                        </div>
+                        <div class="signature-name">{{ $approverName ?: 'PIC' }}</div>
+                        <div class="signature-title">Purchasing</div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div style="margin-bottom: 6px; font-size: 9px; line-height: 1.4; color: #333;">
+                <strong>Terima Kasih:</strong> PO ini kami buat atas dasar pengajuan SPPG sesuai user. Harap dikirim secepatnya dan kami ucapkan terima kasih.
+            </div>
+            <div>Dokumen ini dicetak pada {{ $generatedDateLabel }}</div>
+            <div style="margin-top: 2px; font-size: 7px; color: #666;">Sistem Manajemen Pengadaan SPPG</div>
         </div>
     </div>
 </body>

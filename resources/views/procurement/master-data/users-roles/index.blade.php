@@ -5,7 +5,7 @@
 @section('content')
     @php
         $currentRoleValue = auth()->user()?->role?->value;
-        $isAdminViewer = $currentRoleValue === \App\Enums\UserRole::ADMIN->value;
+        $isRestrictedViewer = in_array($currentRoleValue, [\App\Enums\UserRole::ADMIN->value, \App\Enums\UserRole::OWNER->value], true);
     @endphp
 
     <div class="mb-4">
@@ -104,7 +104,7 @@
                             <td class="px-4 py-3">
                                 @php
                                     $targetRoleValue = $user->role?->value ?? $user->role;
-                                    $isProtectedSuperAdmin = $isAdminViewer && $targetRoleValue === \App\Enums\UserRole::SUPER_ADMIN->value;
+                                    $isProtectedSuperAdmin = $isRestrictedViewer && $targetRoleValue === \App\Enums\UserRole::SUPER_ADMIN->value;
                                 @endphp
                                 <div class="flex items-center justify-end gap-2">
                                     @if($isProtectedSuperAdmin)

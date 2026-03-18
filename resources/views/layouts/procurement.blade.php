@@ -101,7 +101,7 @@
             <aside class="lg:col-span-3">
                 <nav class="rounded-xl border border-gray-200 bg-white p-3">
                     @php
-                        $effectiveRole = $currentRoleValue === \App\Enums\UserRole::ADMIN->value
+                        $effectiveRole = in_array($currentRoleValue, [\App\Enums\UserRole::ADMIN->value, \App\Enums\UserRole::OWNER->value], true)
                             ? \App\Enums\UserRole::SUPER_ADMIN->value
                             : $currentRoleValue;
 
@@ -172,9 +172,7 @@
                             \App\Enums\UserRole::OWNER->value,
                             \App\Enums\UserRole::PURCHASING->value,
                         ]);
-                        $canUsersRoles = $hasRole([
-                            \App\Enums\UserRole::SUPER_ADMIN->value,
-                        ]);
+                        $canUsersRoles = $currentRoleValue === \App\Enums\UserRole::SUPER_ADMIN->value;
                         $canProgramControl = $currentRoleValue === \App\Enums\UserRole::SUPER_ADMIN->value;
                         $canAuditTrail = $canApproval;
                         $canAnalytics = $hasRole([
@@ -183,6 +181,7 @@
                             \App\Enums\UserRole::FINANCE->value,
                             \App\Enums\UserRole::PURCHASING->value,
                         ]);
+                        $sidebarSectionLabelClass = 'mb-2 rounded-md border border-slate-200 bg-slate-100 px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.16em] text-slate-500';
                     @endphp
 
                     <div class="mb-4 rounded-2xl border border-[#c8ccd1] bg-[#f3f4f6] px-4 py-4">
@@ -196,13 +195,13 @@
                     </div>
 
                     <div class="mb-4">
-                        <p class="mb-2 px-2 text-xs font-semibold uppercase tracking-wide text-gray-400">Overview</p>
+                        <p class="{{ $sidebarSectionLabelClass }}">Overview</p>
                         <a href="{{ route('ui.dashboard') }}" class="mb-1 block rounded-md px-3 py-2 text-sm font-medium hover:bg-gray-100 {{ request()->routeIs('ui.dashboard') ? 'bg-gray-100 text-blue-700' : 'text-gray-700' }}">Dashboard</a>
                     </div>
 
                     @if($canPurchaseRequest || $canPurchaseOrder || $canApproval)
                         <div class="mb-4">
-                            <p class="mb-2 px-2 text-xs font-semibold uppercase tracking-wide text-gray-400">Procurement Workflow</p>
+                            <p class="{{ $sidebarSectionLabelClass }}">Procurement Workflow</p>
                             @if($canPurchaseRequest)
                                 <a href="{{ route('ui.purchase-requests.index') }}" class="mb-1 block rounded-md px-3 py-2 text-sm font-medium hover:bg-gray-100 {{ request()->routeIs('ui.purchase-requests.*') ? 'bg-gray-100 text-blue-700' : 'text-gray-700' }}">Purchase Requests</a>
                             @endif
@@ -217,7 +216,7 @@
 
                     @if($canDeliveries || $canRejectedItems || $canStockMovements || $canStockAlerts)
                         <div class="mb-4">
-                            <p class="mb-2 px-2 text-xs font-semibold uppercase tracking-wide text-gray-400">Inventory & Distribution</p>
+                            <p class="{{ $sidebarSectionLabelClass }}">Inventory & Distribution</p>
                             @if($canDeliveries)
                                 <a href="{{ route('ui.deliveries.index') }}" class="mb-1 block rounded-md px-3 py-2 text-sm font-medium hover:bg-gray-100 {{ request()->routeIs('ui.deliveries.*') ? 'bg-gray-100 text-blue-700' : 'text-gray-700' }}">Deliveries / Goods Receipt</a>
                             @endif
@@ -235,7 +234,7 @@
 
                     @if($canInvoices || $canKwitansi || $canBillingCycles || $canPurchaseFunding || $canPayments)
                         <div class="mb-4">
-                            <p class="mb-2 px-2 text-xs font-semibold uppercase tracking-wide text-gray-400">Finance & Billing</p>
+                            <p class="{{ $sidebarSectionLabelClass }}">Finance & Billing</p>
                             @if($canInvoices)
                                 <a href="{{ route('ui.invoices.index') }}" class="mb-1 block rounded-md px-3 py-2 text-sm font-medium hover:bg-gray-100 {{ request()->routeIs('ui.invoices.*') ? 'bg-gray-100 text-blue-700' : 'text-gray-700' }}">Invoices</a>
                             @endif
@@ -256,7 +255,7 @@
 
                     @if($canMasterData || $canUsersRoles)
                         <div class="mb-4">
-                            <p class="mb-2 px-2 text-xs font-semibold uppercase tracking-wide text-gray-400">Master Data</p>
+                            <p class="{{ $sidebarSectionLabelClass }}">Master Data</p>
                             @if($canMasterData)
                                 <a href="{{ route('ui.master-data.sppgs.index') }}" class="mb-1 block rounded-md px-3 py-2 text-sm font-medium hover:bg-gray-100 {{ request()->routeIs('ui.master-data.sppgs.*') ? 'bg-gray-100 text-blue-700' : 'text-gray-700' }}">SPPG</a>
                                 <a href="{{ route('ui.master-data.vendors.index') }}" class="mb-1 block rounded-md px-3 py-2 text-sm font-medium hover:bg-gray-100 {{ request()->routeIs('ui.master-data.vendors.*') ? 'bg-gray-100 text-blue-700' : 'text-gray-700' }}">Vendors</a>
@@ -271,7 +270,7 @@
 
                     @if($canAnalytics || $canAuditTrail)
                         <div class="mb-2">
-                            <p class="mb-2 px-2 text-xs font-semibold uppercase tracking-wide text-gray-400">Analytics & Compliance</p>
+                            <p class="{{ $sidebarSectionLabelClass }}">Analytics & Compliance</p>
                             @if($canAnalytics)
                                 <a href="{{ route('ui.vendor-performances.index') }}" class="mb-1 block rounded-md px-3 py-2 text-sm font-medium hover:bg-gray-100 {{ request()->routeIs('ui.vendor-performances.*') ? 'bg-gray-100 text-blue-700' : 'text-gray-700' }}">Vendor Performance</a>
                                 <a href="{{ route('ui.price-trends.index') }}" class="mb-1 block rounded-md px-3 py-2 text-sm font-medium hover:bg-gray-100 {{ request()->routeIs('ui.price-trends.*') ? 'bg-gray-100 text-blue-700' : 'text-gray-700' }}">Price Trend Analysis</a>
@@ -284,7 +283,7 @@
 
                     @if($canProgramControl)
                         <div class="mb-2">
-                            <p class="mb-2 px-2 text-xs font-semibold uppercase tracking-wide text-gray-400">System Control</p>
+                            <p class="{{ $sidebarSectionLabelClass }}">System Control</p>
                             <a href="{{ route('ui.program-control.index') }}" class="mb-1 block rounded-md px-3 py-2 text-sm font-medium hover:bg-gray-100 {{ request()->routeIs('ui.program-control.*') ? 'bg-gray-100 text-blue-700' : 'text-gray-700' }}">Program ON/OFF</a>
                         </div>
                     @endif

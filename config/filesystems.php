@@ -33,6 +33,18 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
+            'visibility' => env('FILESYSTEM_LOCAL_VISIBILITY', 'private'),
+            'directory_visibility' => env('FILESYSTEM_LOCAL_DIRECTORY_VISIBILITY', 'private'),
+            'permissions' => [
+                'file' => [
+                    'public' => intval((string) env('FILESYSTEM_FILE_PUBLIC_PERMISSION', '0644'), 8),
+                    'private' => intval((string) env('FILESYSTEM_FILE_PRIVATE_PERMISSION', '0600'), 8),
+                ],
+                'dir' => [
+                    'public' => intval((string) env('FILESYSTEM_DIR_PUBLIC_PERMISSION', '0755'), 8),
+                    'private' => intval((string) env('FILESYSTEM_DIR_PRIVATE_PERMISSION', '0700'), 8),
+                ],
+            ],
             'serve' => true,
             'throw' => false,
             'report' => false,
@@ -43,6 +55,17 @@ return [
             'root' => storage_path('app/public'),
             'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
             'visibility' => 'public',
+            'directory_visibility' => 'public',
+            'permissions' => [
+                'file' => [
+                    'public' => intval((string) env('FILESYSTEM_FILE_PUBLIC_PERMISSION', '0644'), 8),
+                    'private' => intval((string) env('FILESYSTEM_FILE_PRIVATE_PERMISSION', '0600'), 8),
+                ],
+                'dir' => [
+                    'public' => intval((string) env('FILESYSTEM_DIR_PUBLIC_PERMISSION', '0755'), 8),
+                    'private' => intval((string) env('FILESYSTEM_DIR_PRIVATE_PERMISSION', '0700'), 8),
+                ],
+            ],
             'throw' => false,
             'report' => false,
         ],
@@ -56,6 +79,8 @@ return [
             'url' => env('AWS_URL'),
             'endpoint' => env('AWS_ENDPOINT'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+            'visibility' => env('FILESYSTEM_S3_VISIBILITY', 'private'),
+            'directory_visibility' => env('FILESYSTEM_S3_DIRECTORY_VISIBILITY', 'private'),
             'throw' => false,
             'report' => false,
         ],

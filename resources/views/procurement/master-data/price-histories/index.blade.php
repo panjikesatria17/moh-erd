@@ -7,6 +7,8 @@
         $canManageMasterWrites = in_array(auth()->user()?->role?->value, [
             \App\Enums\UserRole::SUPER_ADMIN->value,
             \App\Enums\UserRole::PURCHASING->value,
+            \App\Enums\UserRole::ADMIN->value,
+            \App\Enums\UserRole::OWNER->value,
         ], true);
         $formatMoneyInput = static fn ($value) => $value === null || $value === ''
             ? ''

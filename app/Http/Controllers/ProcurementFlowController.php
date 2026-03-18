@@ -184,6 +184,7 @@ class ProcurementFlowController extends Controller
                     'quantity' => $item->quantity,
                     'unit_price' => $unitPrice,
                     'subtotal' => $subtotal,
+                    'notes' => $item->notes,
                 ]);
             }
 

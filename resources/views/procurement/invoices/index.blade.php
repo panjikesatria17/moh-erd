@@ -4,7 +4,8 @@
 
 @section('content')
     @php
-        $currentRole = auth()->user()?->role?->value;
+        $currentRoleRaw = auth()->user()?->role?->value;
+        $currentRole = in_array($currentRoleRaw, ['admin', 'owner'], true) ? 'super_admin' : $currentRoleRaw;
         $canManageFinanceWrites = in_array($currentRole, ['super_admin', 'finance'], true);
     @endphp
 

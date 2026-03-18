@@ -7,6 +7,8 @@
         $canManageMasterWrites = in_array(auth()->user()?->role?->value, [
             \App\Enums\UserRole::SUPER_ADMIN->value,
             \App\Enums\UserRole::PURCHASING->value,
+            \App\Enums\UserRole::ADMIN->value,
+            \App\Enums\UserRole::OWNER->value,
         ], true);
         $formatMoneyInput = static fn ($value) => $value === null || $value === ''
             ? ''
@@ -115,6 +117,18 @@
             <div>
                 <label class="mb-1 block text-xs font-medium text-gray-600">Unit</label>
                 <input type="text" name="unit" value="{{ old('unit', $editProduct?->unit) }}" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" placeholder="kg / pcs / liter" required>
+            </div>
+            <div>
+                <label class="mb-1 block text-xs font-medium text-gray-600">PCS per BOX (Opsional)</label>
+                <input type="text" inputmode="decimal" name="pcs_per_box" value="{{ $formatMoneyInput(old('pcs_per_box', $editProduct?->pcs_per_box)) }}" class="js-idr-input w-full rounded-md border border-gray-300 px-3 py-2 text-sm" placeholder="Contoh: 12">
+            </div>
+            <div>
+                <label class="mb-1 block text-xs font-medium text-gray-600">PCS per PACK (Opsional)</label>
+                <input type="text" inputmode="decimal" name="pcs_per_pack" value="{{ $formatMoneyInput(old('pcs_per_pack', $editProduct?->pcs_per_pack)) }}" class="js-idr-input w-full rounded-md border border-gray-300 px-3 py-2 text-sm" placeholder="Contoh: 6">
+            </div>
+            <div>
+                <label class="mb-1 block text-xs font-medium text-gray-600">Total Inventory (Qty)</label>
+                <input type="number" step="0.01" min="0" name="total_inventory" value="{{ old('total_inventory', $editProduct?->total_inventory ?? 0) }}" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" placeholder="Contoh: 100">
             </div>
             <div>
                 <label class="mb-1 block text-xs font-medium text-gray-600">Harga Beli</label>
@@ -352,10 +366,10 @@
                                 @endif
                             </td>
                             <td class="px-4 py-3 text-right">
-                                <span class="font-medium">{{ number_format($inventoryQty, 2, ',', '.') }}</span>
+                                <span class="font-medium">{{ number_format($inventoryQtyByProduct[$product->id] ?? 0, 2, ',', '.') }}</span>
                                 <span class="text-[11px] text-gray-500">{{ $product->unit }}</span>
                             </td>
-                            <td class="px-4 py-3 text-right font-semibold whitespace-nowrap">@rupiah($inventoryValue)</td>
+                            <td class="px-4 py-3 text-right font-semibold whitespace-nowrap">@rupiah($inventoryValueByProduct[$product->id] ?? 0)</td>
                             <td class="px-4 py-3 text-right">{{ number_format((float) $product->minimum_stock_level, 2, ',', '.') }} / {{ number_format((float) $product->reorder_stock_level, 2, ',', '.') }}</td>
                             <td class="px-4 py-3">
                                 <span class="rounded-full px-2.5 py-1 text-[11px] font-medium {{ $product->is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600' }}">
