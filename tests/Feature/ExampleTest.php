@@ -15,7 +15,8 @@ class ExampleTest extends TestCase
         $response = $this->get('/');
 
         $response->assertOk();
-        $response->assertSee('SELAMAT DATANG DI PROGRAM');
+        $response->assertSee('SELAMAT DATANG');
+        $response->assertSee('MASUK APLIKASI');
         $response->assertSee(route('login'));
     }
 }

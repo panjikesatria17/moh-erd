@@ -17,6 +17,31 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property string $number
+ * @property int $purchase_order_id
+ * @property ?int $goods_receipt_id
+ * @property int $sppg_id
+ * @property int $vendor_id
+ * @property int $delivered_by
+ * @property \Illuminate\Support\Carbon $delivery_date
+ * @property ?string $delivery_proof_image_path
+ * @property ?string $signed_delivery_note_path
+ * @property ?string $proof_uploaded_at
+ * @property ?string $delivered_at
+ * @property DocumentStatus $status
+ * @property string $total_amount
+ * @property string $invoiced_po_amount
+ * @property ?string $notes
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property \Illuminate\Support\Carbon $updated_at
+ * @property ?\Illuminate\Support\Carbon $deleted_at
+ * @property-read PurchaseOrder $purchaseOrder
+ * @property-read Sppg $sppg
+ * @property-read Vendor $vendor
+ * @property-read User $deliveredBy
+ */
 class Delivery extends Model
 {
     use HasFactory, SoftDeletes;

@@ -15,6 +15,28 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property string $number
+ * @property ?int $billing_cycle_id
+ * @property ?int $delivery_id
+ * @property int $sppg_id
+ * @property int $vendor_id
+ * @property \Illuminate\Support\Carbon $invoice_date
+ * @property \Illuminate\Support\Carbon $due_date
+ * @property DocumentStatus $status
+ * @property string $subtotal_amount
+ * @property string $tax_amount
+ * @property string $total_amount
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property \Illuminate\Support\Carbon $updated_at
+ * @property ?\Illuminate\Support\Carbon $deleted_at
+ * @property-read Sppg $sppg
+ * @property-read Vendor $vendor
+ * @property-read ?BillingCycle $billingCycle
+ * @property-read ?Delivery $delivery
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Payment> $payments
+ */
 class Invoice extends Model
 {
     use HasFactory, SoftDeletes;

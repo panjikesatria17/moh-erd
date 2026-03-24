@@ -8,6 +8,21 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property string $number
+ * @property int $vendor_id
+ * @property ?string $billed_to
+ * @property \Illuminate\Support\Carbon $receipt_date
+ * @property string $total_amount
+ * @property int $created_by
+ * @property ?string $notes
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property \Illuminate\Support\Carbon $updated_at
+ * @property ?\Illuminate\Support\Carbon $deleted_at
+ * @property-read Vendor $vendor
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Invoice> $invoices
+ */
 class Kwitansi extends Model
 {
     use HasFactory, SoftDeletes;

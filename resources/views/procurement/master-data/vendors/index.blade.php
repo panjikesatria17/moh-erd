@@ -4,17 +4,20 @@
 
 @section('content')
     @php
-        $canManageMasterWrites = in_array(auth()->user()?->role?->value, [\App\Enums\UserRole::SUPER_ADMIN->value, \App\Enums\UserRole::ADMIN->value, \App\Enums\UserRole::OWNER->value], true);
+        $authRole = auth()->user()?->role;
+        $currentRoleRaw = is_object($authRole) ? ($authRole->value ?? null) : $authRole;
+        $canManageMasterWrites = in_array($currentRoleRaw, [\App\Enums\UserRole::SUPER_ADMIN->value, \App\Enums\UserRole::ADMIN->value, \App\Enums\UserRole::OWNER->value, 'super_admin', 'admin', 'owner'], true);
     @endphp
 
-    <div class="mb-4 flex items-center justify-between">
-        <div>
-            <h2 class="text-xl font-semibold">Master Data - Vendors</h2>
-            <p class="text-sm text-gray-500">Kelola data vendor beserta informasi kontak dan afiliasi.</p>
-        </div>
-    </div>
+    <x-ui.hero
+        class="mb-4"
+        eyebrow="Master Data"
+        title="Master Data - Vendors"
+        description="Kelola data vendor beserta informasi kontak dan afiliasi."
+    />
 
-    <form method="GET" action="{{ route('ui.master-data.vendors.index') }}" class="mb-4 rounded-xl border border-gray-200 bg-white p-3">
+    <x-ui.panel class="mb-4" title="Filter Vendor">
+    <form method="GET" action="{{ route('ui.master-data.vendors.index') }}" class="">
         <div class="flex flex-wrap items-center gap-2">
             <input
                 type="text"
@@ -29,15 +32,16 @@
             @endif
         </div>
     </form>
+    </x-ui.panel>
 
     @if($canManageMasterWrites)
-    <form method="POST" action="{{ $editVendor ? route('ui.master-data.vendors.update', $editVendor) : route('ui.master-data.vendors.store') }}" class="mb-5 rounded-xl border border-gray-200 bg-white p-4">
+    <x-ui.panel class="mb-5" :title="$editVendor ? 'Edit Vendor' : 'Tambah Vendor'">
+    <form method="POST" action="{{ $editVendor ? route('ui.master-data.vendors.update', $editVendor) : route('ui.master-data.vendors.store') }}" class="">
         @csrf
         @if($editVendor)
             @method('PUT')
         @endif
         <div class="mb-3 flex items-center justify-between gap-2">
-            <h3 class="text-sm font-semibold text-gray-700">{{ $editVendor ? 'Edit Vendor' : 'Tambah Vendor' }}</h3>
             @if($editVendor)
                 <a href="{{ route('ui.master-data.vendors.index') }}" class="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Batal Edit</a>
             @endif
@@ -86,9 +90,10 @@
             <button type="submit" class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">{{ $editVendor ? 'Update Vendor' : 'Simpan Vendor' }}</button>
         </div>
     </form>
+    </x-ui.panel>
     @endif
 
-    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+    <x-ui.panel title="Daftar Vendor" subtitle="Vendor aktif dan afiliasinya" bodyClass="p-0">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
@@ -113,14 +118,22 @@
                                 <div class="text-xs">{{ $vendor->phone ?: '-' }}</div>
                             </td>
                             <td class="px-4 py-3">
-                                <span class="rounded-full px-2.5 py-1 text-xs font-medium {{ $vendor->is_affiliate ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600' }}">
-                                    {{ $vendor->is_affiliate ? 'Afiliasi' : 'Non Afiliasi' }}
-                                </span>
+                                <x-ui.status-pill
+                                    :value="$vendor->is_affiliate ? 'afiliasi' : 'non afiliasi'"
+                                    :classes="[
+                                        'afiliasi' => 'bg-purple-100 text-purple-700',
+                                        'non afiliasi' => 'bg-slate-100 text-slate-600',
+                                    ]"
+                                />
                             </td>
                             <td class="px-4 py-3">
-                                <span class="rounded-full px-2.5 py-1 text-xs font-medium {{ $vendor->is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600' }}">
-                                    {{ $vendor->is_active ? 'Aktif' : 'Nonaktif' }}
-                                </span>
+                                <x-ui.status-pill
+                                    :value="$vendor->is_active ? 'aktif' : 'nonaktif'"
+                                    :classes="[
+                                        'aktif' => 'bg-emerald-100 text-emerald-700',
+                                        'nonaktif' => 'bg-slate-100 text-slate-600',
+                                    ]"
+                                />
                             </td>
                             <td class="px-4 py-3">
                                 @if($canManageMasterWrites)
@@ -143,7 +156,7 @@
                 </tbody>
             </table>
         </div>
-    </div>
+    </x-ui.panel>
 
     <div class="mt-4">
         {{ $vendors->links() }}

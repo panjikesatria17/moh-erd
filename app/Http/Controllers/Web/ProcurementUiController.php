@@ -36,11 +36,14 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use App\Enums\UserRole;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -175,7 +178,7 @@ class ProcurementUiController extends Controller
             'funding_disbursed_total' => (float) (clone $fundingRequestCountQuery)->sum('disbursed_amount'),
             'funding_remaining_total' => max(
                 (float) (clone $fundingRequestCountQuery)->sum('disbursed_amount')
-                - (float) (clone $fundingRequestCountQuery)->sum('spent_amount'),
+                    - (float) (clone $fundingRequestCountQuery)->sum('spent_amount'),
                 0
             ),
         ];
@@ -286,8 +289,8 @@ class ProcurementUiController extends Controller
                     ->whereNull('purchase_order_items.deleted_at')
                     ->whereNull('purchase_orders.deleted_at')
                     ->selectRaw('sppgs.id as sppg_id, sppgs.name as sppg_name, SUM(purchase_order_items.quantity) as total_qty, SUM(purchase_order_items.subtotal) as total_amount')
-                    ->when($sppgScopeEnabled, fn ($query) => $query->where('purchase_orders.sppg_id', $this->scopedId($sppgScopeId)))
-                    ->when($vendorScopeEnabled, fn ($query) => $query->where('purchase_orders.vendor_id', $this->scopedId($vendorScopeId)))
+                    ->when($sppgScopeEnabled, fn($query) => $query->where('purchase_orders.sppg_id', $this->scopedId($sppgScopeId)))
+                    ->when($vendorScopeEnabled, fn($query) => $query->where('purchase_orders.vendor_id', $this->scopedId($vendorScopeId)))
                     ->groupBy('sppgs.id', 'sppgs.name')
                     ->orderByDesc('total_qty')
                     ->limit(8);
@@ -327,7 +330,7 @@ class ProcurementUiController extends Controller
 
         $purchaseRequests = PurchaseRequest::query()
             ->with(['sppg', 'requester', 'additionalToPurchaseOrder'])
-            ->when($isSppgUser, fn ($query) => $query->where('sppg_id', $currentUserSppgId))
+            ->when($isSppgUser, fn($query) => $query->where('sppg_id', $currentUserSppgId))
             ->withCount([
                 'items as ad_hoc_items_count' => function ($query) {
                     $query->whereHas('product', function ($productQuery) {
@@ -340,7 +343,7 @@ class ProcurementUiController extends Controller
 
         $sppgs = Sppg::query()
             ->where('is_active', true)
-            ->when($isSppgUser, fn ($query) => $query->whereKey($currentUserSppgId))
+            ->when($isSppgUser, fn($query) => $query->whereKey($currentUserSppgId))
             ->orderBy('name')
             ->get();
         $products = Product::query()->where('is_active', true)->orderBy('name')->get();
@@ -348,7 +351,7 @@ class ProcurementUiController extends Controller
         $referencePurchaseOrders = PurchaseOrder::query()
             ->with(['vendor', 'sppg'])
             ->whereIn('status', [DocumentStatus::APPROVED->value, DocumentStatus::PROCESSED->value])
-            ->when($isSppgUser, fn ($query) => $query->where('sppg_id', $currentUserSppgId))
+            ->when($isSppgUser, fn($query) => $query->where('sppg_id', $currentUserSppgId))
             ->latest('order_date')
             ->limit(200)
             ->get();
@@ -361,7 +364,7 @@ class ProcurementUiController extends Controller
 
         $priceLookup = [];
         foreach ($priceHistories as $history) {
-            $key = $history->product_id.':'.($history->vendor_id ?? 0);
+            $key = $history->product_id . ':' . ($history->vendor_id ?? 0);
             if (! array_key_exists($key, $priceLookup)) {
                 $priceLookup[$key] = (float) $history->price;
             }
@@ -460,7 +463,7 @@ class ProcurementUiController extends Controller
 
         $purchaseOrders = PurchaseOrder::query()
             ->with(['sppg', 'vendor', 'purchaseRequest'])
-            ->when($vendorScopeId !== null, fn ($query) => $query->where('vendor_id', $vendorScopeId > 0 ? $vendorScopeId : -1))
+            ->when($vendorScopeId !== null, fn($query) => $query->where('vendor_id', $vendorScopeId > 0 ? $vendorScopeId : -1))
             ->withCount([
                 'items as ad_hoc_items_count' => function ($query) {
                     $query->whereHas('product', function ($productQuery) {
@@ -499,7 +502,7 @@ class ProcurementUiController extends Controller
 
             return [
                 'no' => $index + 1,
-                'name' => ($item->product?->name ?? '-').($isAdHoc ? ' (NON KATALOG)' : ''),
+                'name' => ($item->product?->name ?? '-') . ($isAdHoc ? ' (NON KATALOG)' : ''),
                 'qty' => (float) $item->quantity,
                 'unit' => $item->product?->unit ?? '-',
                 'unit_price' => (float) $item->unit_price,
@@ -525,7 +528,7 @@ class ProcurementUiController extends Controller
             'itemsRows' => $rows,
             'totalAmount' => (float) $purchaseOrder->total_amount,
             'notes' => $purchaseOrder->notes,
-        ], $purchaseOrder->number.'.pdf');
+        ], $purchaseOrder->number . '.pdf');
     }
 
     public function downloadPurchaseRequestPdf(PurchaseRequest $purchaseRequest): Response
@@ -558,7 +561,7 @@ class ProcurementUiController extends Controller
 
             return [
                 'no' => $index + 1,
-                'name' => ($item->product?->name ?? '-').($isAdHoc ? ' (NON KATALOG)' : ''),
+                'name' => ($item->product?->name ?? '-') . ($isAdHoc ? ' (NON KATALOG)' : ''),
                 'qty' => (float) $item->quantity,
                 'unit' => $item->product?->unit ?? '-',
                 'unit_price' => (float) $item->requested_unit_price,
@@ -584,7 +587,7 @@ class ProcurementUiController extends Controller
             'itemsRows' => $rows,
             'totalAmount' => (float) $purchaseRequest->total_amount,
             'notes' => $purchaseRequest->notes,
-        ], $purchaseRequest->number.'.pdf', 'pr');
+        ], $purchaseRequest->number . '.pdf', 'pr');
     }
 
     private function renderProcurementDocumentPdf(array $payload, string $filename, string $documentType = 'po'): Response
@@ -611,7 +614,7 @@ class ProcurementUiController extends Controller
             }
         }
 
-        $pdf = Pdf::loadView($template, [
+        return $this->downloadPdfFromView($template, [
             'documentTypeLabel' => $payload['documentTypeLabel'] ?? '-',
             'documentNumber' => $payload['documentNumber'] ?? '-',
             'referenceNumber' => $payload['referenceNumber'] ?? '-',
@@ -631,9 +634,7 @@ class ProcurementUiController extends Controller
             'logoBgn' => $this->imageDataUri(public_path('images/logo-bgn.png'), true),
             'logoSmp' => $this->imageDataUri(public_path('images/smp-logo.png'), true),
             'logoSppg' => $this->imageDataUri(public_path('images/logo-smp.png'), true),
-        ])->setPaper('a4', 'portrait');
-
-        return $pdf->download($filename);
+        ], $filename, 'a4', 'portrait');
     }
 
     public function deliveries(Request $request): View
@@ -652,14 +653,14 @@ class ProcurementUiController extends Controller
 
         $deliveries = Delivery::query()
             ->with(['sppg', 'vendor', 'purchaseOrder'])
-            ->when($selectedVendorId, fn ($query) => $query->where('vendor_id', $selectedVendorId))
+            ->when($selectedVendorId, fn($query) => $query->where('vendor_id', $selectedVendorId))
             ->latest('delivery_date')
             ->paginate(15)
             ->withQueryString();
 
         $pendingPurchaseOrders = PurchaseOrder::query()
             ->with(['sppg', 'vendor'])
-            ->when($selectedVendorId, fn ($query) => $query->where('vendor_id', $selectedVendorId))
+            ->when($selectedVendorId, fn($query) => $query->where('vendor_id', $selectedVendorId))
             ->whereIn('status', [DocumentStatus::APPROVED->value, DocumentStatus::PROCESSED->value])
             ->whereDoesntHave('deliveries')
             ->latest('order_date')
@@ -836,8 +837,8 @@ class ProcurementUiController extends Controller
 
         $deliveries = Delivery::query()
             ->with(['purchaseOrder.items.product', 'sppg', 'vendor'])
-            ->when($vendorScopeId !== null, fn ($query) => $query->where('vendor_id', $this->scopedId($vendorScopeId)))
-            ->when($sppgScopeId !== null, fn ($query) => $query->where('sppg_id', $this->scopedId($sppgScopeId)))
+            ->when($vendorScopeId !== null, fn($query) => $query->where('vendor_id', $this->scopedId($vendorScopeId)))
+            ->when($sppgScopeId !== null, fn($query) => $query->where('sppg_id', $this->scopedId($sppgScopeId)))
             ->latest('delivery_date')
             ->limit(250)
             ->get();
@@ -874,12 +875,12 @@ class ProcurementUiController extends Controller
                 'reporter:id,name',
             ])
             ->when($vendorScopeId !== null, function ($query) use ($vendorScopeId) {
-                $query->whereHas('delivery', fn ($deliveryQuery) => $deliveryQuery->where('vendor_id', $this->scopedId($vendorScopeId)));
+                $query->whereHas('delivery', fn($deliveryQuery) => $deliveryQuery->where('vendor_id', $this->scopedId($vendorScopeId)));
             })
             ->when($sppgScopeId !== null, function ($query) use ($sppgScopeId) {
-                $query->whereHas('delivery', fn ($deliveryQuery) => $deliveryQuery->where('sppg_id', $this->scopedId($sppgScopeId)));
+                $query->whereHas('delivery', fn($deliveryQuery) => $deliveryQuery->where('sppg_id', $this->scopedId($sppgScopeId)));
             })
-            ->when($selectedDelivery?->id, fn ($query) => $query->where('delivery_id', (int) $selectedDelivery->id))
+            ->when($selectedDelivery?->id, fn($query) => $query->where('delivery_id', (int) $selectedDelivery->id))
             ->orderByDesc('reported_at')
             ->orderByDesc('id')
             ->paginate(15)
@@ -1013,9 +1014,9 @@ class ProcurementUiController extends Controller
 
         [$logoVendor, $hasCustomVendorLogo] = $this->resolveVendorLogoDataUri($delivery->vendor, true);
 
-        $filename = 'SURAT-JALAN-'.($delivery->number ?? 'DELIVERY').'.pdf';
+        $filename = 'SURAT-JALAN-' . ($delivery->number ?? 'DELIVERY') . '.pdf';
 
-        $pdf = Pdf::loadView('procurement.deliveries.surat-jalan-pdf', [
+        return $this->streamPdfFromView('procurement.deliveries.surat-jalan-pdf', [
             'delivery' => $delivery,
             'vendor' => $delivery->vendor,
             'sppg' => $delivery->sppg,
@@ -1025,9 +1026,7 @@ class ProcurementUiController extends Controller
             'logoVendor' => $logoVendor,
             'hasCustomVendorLogo' => $hasCustomVendorLogo,
             'generatedAt' => now(),
-        ])->setPaper('a4', 'portrait');
-
-        return $pdf->stream($filename);
+        ], $filename, 'a4', 'portrait');
     }
 
     public function invoices(Request $request): View
@@ -1051,7 +1050,7 @@ class ProcurementUiController extends Controller
 
         $invoices = Invoice::query()
             ->with(['sppg', 'vendor', 'payments'])
-            ->when($selectedVendorId, fn ($query) => $query->where('vendor_id', $selectedVendorId))
+            ->when($selectedVendorId, fn($query) => $query->where('vendor_id', $selectedVendorId))
             ->latest('invoice_date')
             ->paginate(15)
             ->withQueryString();
@@ -1082,7 +1081,7 @@ class ProcurementUiController extends Controller
 
                 $isAdditional = $additionalDeliveries->isNotEmpty();
                 $additionalPoNumbers = $additionalDeliveries
-                    ->map(fn (Delivery $delivery) => $delivery->purchaseOrder?->number)
+                    ->map(fn(Delivery $delivery) => $delivery->purchaseOrder?->number)
                     ->filter()
                     ->unique()
                     ->values();
@@ -1119,9 +1118,9 @@ class ProcurementUiController extends Controller
             ->with([
                 'sppg',
                 'vendor',
-                'deliveries' => fn ($query) => $query->latest('id')->limit(1),
+                'deliveries' => fn($query) => $query->latest('id')->limit(1),
             ])
-            ->when($selectedVendorId, fn ($query) => $query->where('vendor_id', $selectedVendorId))
+            ->when($selectedVendorId, fn($query) => $query->where('vendor_id', $selectedVendorId))
             ->whereIn('status', [DocumentStatus::APPROVED->value, DocumentStatus::PROCESSED->value])
             ->latest('order_date')
             ->get()
@@ -1201,12 +1200,12 @@ class ProcurementUiController extends Controller
                 $isAdditionalPo = str_contains((string) ($po->notes ?? ''), '[BARANG TAMBAHAN]');
                 $isAdHoc = (bool) ($item->product?->is_ad_hoc ?? false);
                 $rows->push([
-                    'name' => ($item->product?->name ?? '-').($isAdditionalPo ? ' (Tambahan)' : '').($isAdHoc ? ' (NON KATALOG)' : ''),
+                    'name' => ($item->product?->name ?? '-') . ($isAdditionalPo ? ' (Tambahan)' : '') . ($isAdHoc ? ' (NON KATALOG)' : ''),
                     'qty' => (float) $item->quantity,
                     'unit' => $item->product?->unit ?? '-',
                     'unit_price' => (float) $item->unit_price,
                     'total_price' => (float) $item->subtotal,
-                    'notes' => 'PO: '.($po->number ?? '-').($isAdditionalPo ? ' [BARANG TAMBAHAN]' : '').($isAdHoc ? ' [NON KATALOG]' : ''),
+                    'notes' => 'PO: ' . ($po->number ?? '-') . ($isAdditionalPo ? ' [BARANG TAMBAHAN]' : '') . ($isAdHoc ? ' [NON KATALOG]' : ''),
                     'arrival_time' => $delivery->delivery_date ? Carbon::parse($delivery->delivery_date)->format('d/m/Y') : '-',
                 ]);
             }
@@ -1233,7 +1232,7 @@ class ProcurementUiController extends Controller
             ]);
         }
 
-        $pdf = Pdf::loadView('procurement.invoices.invoice-pdf', [
+        return $this->downloadPdfFromView('procurement.invoices.invoice-pdf', [
             'invoice' => $invoice,
             'vendor' => $invoice->vendor,
             'sppg' => $invoice->sppg,
@@ -1247,9 +1246,7 @@ class ProcurementUiController extends Controller
             'signatureName' => $invoice->vendor?->name,
             'logoVendor' => $vendorLogo,
             'hasCustomVendorLogo' => $hasCustomVendorLogo,
-        ])->setPaper('a4', 'portrait');
-
-        return $pdf->download($invoice->number.'.pdf');
+        ], $invoice->number . '.pdf', 'a4', 'portrait');
     }
 
     public function downloadVendorInvoiceSummaryPdf(Request $request): Response
@@ -1278,21 +1275,18 @@ class ProcurementUiController extends Controller
             ->orderBy('number')
             ->get();
 
-        $summaryTotal = (float) $summaryInvoices->sum(fn ($invoice) => (float) $invoice->total_amount);
+        $summaryTotal = (float) $summaryInvoices->sum(fn($invoice) => (float) $invoice->total_amount);
+        $safeVendorName = preg_replace('/[^A-Za-z0-9\-]/', '-', strtoupper((string) $vendor->name)) ?: 'VENDOR';
+        $filename = sprintf('REKAP-INVOICE-%s-%s-%s.pdf', $safeVendorName, $weekStartDate, $weekEndDate);
 
-        $pdf = Pdf::loadView('procurement.invoices.summary-pdf', [
+        return $this->downloadPdfFromView('procurement.invoices.summary-pdf', [
             'vendor' => $vendor,
             'weekStartDate' => $weekStartDate,
             'weekEndDate' => $weekEndDate,
             'summaryInvoices' => $summaryInvoices,
             'summaryTotal' => $summaryTotal,
             'generatedAt' => now(),
-        ])->setPaper('a4', 'portrait');
-
-        $safeVendorName = preg_replace('/[^A-Za-z0-9\-]/', '-', strtoupper((string) $vendor->name)) ?: 'VENDOR';
-        $filename = sprintf('REKAP-INVOICE-%s-%s-%s.pdf', $safeVendorName, $weekStartDate, $weekEndDate);
-
-        return $pdf->download($filename);
+        ], $filename, 'a4', 'portrait');
     }
 
     public function createInvoicePayment(Request $request, Invoice $invoice): RedirectResponse
@@ -1306,7 +1300,7 @@ class ProcurementUiController extends Controller
         }
 
         $activePayment = $invoice->payments
-            ->first(fn (Payment $payment) => in_array($payment->status?->value, [
+            ->first(fn(Payment $payment) => in_array($payment->status?->value, [
                 PaymentStatus::DRAFT->value,
                 PaymentStatus::SUBMITTED->value,
                 PaymentStatus::APPROVED->value,
@@ -1538,7 +1532,7 @@ class ProcurementUiController extends Controller
                 'total_amount' => $incrementalAmount,
                 'delivery_date' => $activeDelivery->delivery_date ?? ($purchaseOrder->order_date ?? now()->toDateString()),
                 'notes' => str_contains((string) ($purchaseOrder->notes ?? ''), '[BARANG TAMBAHAN]')
-                    ? trim((string) ($activeDelivery->notes ?? '').' [BARANG TAMBAHAN]')
+                    ? trim((string) ($activeDelivery->notes ?? '') . ' [BARANG TAMBAHAN]')
                     : $activeDelivery->notes,
             ]);
 
@@ -1674,11 +1668,11 @@ class ProcurementUiController extends Controller
         $vendors = Vendor::query()
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($innerQuery) use ($search) {
-                    $innerQuery->where('code', 'like', '%'.$search.'%')
-                        ->orWhere('name', 'like', '%'.$search.'%')
-                        ->orWhere('owner_name', 'like', '%'.$search.'%')
-                        ->orWhere('email', 'like', '%'.$search.'%')
-                        ->orWhere('phone', 'like', '%'.$search.'%');
+                    $innerQuery->where('code', 'like', '%' . $search . '%')
+                        ->orWhere('name', 'like', '%' . $search . '%')
+                        ->orWhere('owner_name', 'like', '%' . $search . '%')
+                        ->orWhere('email', 'like', '%' . $search . '%')
+                        ->orWhere('phone', 'like', '%' . $search . '%');
                 });
             })
             ->orderByDesc('is_active')
@@ -1811,7 +1805,8 @@ class ProcurementUiController extends Controller
             $productId = (int) $filteredProduct->id;
             $qtyTransaksi = (float) ($qtyTransaksiByProduct[$productId] ?? 0);
             $qtyMaster = (float) ($filteredProduct->total_inventory ?? 0);
-            $qty = $qtyTransaksi > 0 ? $qtyTransaksi : $qtyMaster;
+            $inventoryQty = $qtyTransaksi > 0 ? $qtyTransaksi : $qtyMaster;
+            $qty = $this->resolveProductAssetQuantity($filteredProduct, $inventoryQty);
             $unitPrice = $this->resolveProductReferencePrice($filteredProduct);
             $value = $qty * $unitPrice;
 
@@ -1853,14 +1848,14 @@ class ProcurementUiController extends Controller
     {
         return Product::query()
             ->with(['category', 'vendor'])
-            ->when($scope === 'catalog', fn ($query) => $query->where('is_ad_hoc', false))
-            ->when($scope === 'ad_hoc', fn ($query) => $query->where('is_ad_hoc', true))
+            ->when($scope === 'catalog', fn($query) => $query->where('is_ad_hoc', false))
+            ->when($scope === 'ad_hoc', fn($query) => $query->where('is_ad_hoc', true))
             ->when($keyword !== '', function ($query) use ($keyword) {
                 $query->where(function ($innerQuery) use ($keyword) {
-                    $innerQuery->where('sku', 'like', '%'.$keyword.'%')
-                        ->orWhere('name', 'like', '%'.$keyword.'%')
-                        ->orWhere('unit', 'like', '%'.$keyword.'%')
-                        ->orWhereHas('vendor', fn ($vendorQuery) => $vendorQuery->where('name', 'like', '%'.$keyword.'%'));
+                    $innerQuery->where('sku', 'like', '%' . $keyword . '%')
+                        ->orWhere('name', 'like', '%' . $keyword . '%')
+                        ->orWhere('unit', 'like', '%' . $keyword . '%')
+                        ->orWhereHas('vendor', fn($vendorQuery) => $vendorQuery->where('name', 'like', '%' . $keyword . '%'));
                 });
             });
     }
@@ -1879,7 +1874,7 @@ class ProcurementUiController extends Controller
             ->whereIn('product_id', $productIds)
             ->groupBy('product_id')
             ->pluck('total_quantity', 'product_id')
-            ->map(fn ($qty) => (float) $qty)
+            ->map(fn($qty) => (float) $qty)
             ->all();
     }
 
@@ -1950,7 +1945,7 @@ class ProcurementUiController extends Controller
         if (substr_count($normalized, '.') > 1) {
             $parts = explode('.', $normalized);
             $decimalPart = array_pop($parts);
-            $normalized = implode('', $parts).'.'.$decimalPart;
+            $normalized = implode('', $parts) . '.' . $decimalPart;
         }
 
         return is_numeric($normalized) ? (float) $normalized : null;
@@ -2225,11 +2220,11 @@ class ProcurementUiController extends Controller
                 (float) ($product->reorder_stock_level ?? 0),
                 (float) ($product->total_inventory ?? 0), // qty
                 $product->is_active ? 1 : 0,
-            ], null, 'A'.$row);
+            ], null, 'A' . $row);
             $row++;
         }
 
-        $filename = 'master-products-'.now()->format('Ymd_His').'.xlsx';
+        $filename = 'master-products-' . now()->format('Ymd_His') . '.xlsx';
 
         return response()->streamDownload(function () use ($spreadsheet) {
             $writer = new Xlsx($spreadsheet);
@@ -2267,7 +2262,9 @@ class ProcurementUiController extends Controller
             $totalAssetValue += $value;
         }
 
-        $pdf = Pdf::loadView('procurement.master-data.products.pdf', [
+        $filename = 'master-products-' . now()->format('Ymd_His') . '.pdf';
+
+        return $this->downloadPdfFromView('procurement.master-data.products.pdf', [
             'products' => $products,
             'inventoryQtyByProduct' => $inventoryQtyByProduct,
             'inventoryValueByProduct' => $inventoryValueByProduct,
@@ -2275,11 +2272,7 @@ class ProcurementUiController extends Controller
             'scope' => $scope,
             'keyword' => $keyword,
             'generatedAt' => now(),
-        ])->setPaper('a4', 'landscape');
-
-        $filename = 'master-products-'.now()->format('Ymd_His').'.pdf';
-
-        return $pdf->download($filename);
+        ], $filename, 'a4', 'landscape');
     }
 
     public function importProductsExcel(Request $request): RedirectResponse
@@ -2311,14 +2304,14 @@ class ProcurementUiController extends Controller
                 ->withErrors(['excel_file' => 'Header Excel tidak valid atau kosong.']);
         }
 
-        $normalizedHeaders = array_map(static fn ($item) => strtolower(trim((string) $item)), $header);
+        $normalizedHeaders = array_map(static fn($item) => strtolower(trim((string) $item)), $header);
 
         $requiredHeaders = ['sku', 'name', 'unit'];
         foreach ($requiredHeaders as $requiredHeader) {
             if (! in_array($requiredHeader, $normalizedHeaders, true)) {
                 return redirect()
                     ->route('ui.master-data.products.index')
-                    ->withErrors(['excel_file' => 'Header `'.$requiredHeader.'` wajib ada di Excel.']);
+                    ->withErrors(['excel_file' => 'Header `' . $requiredHeader . '` wajib ada di Excel.']);
             }
         }
 
@@ -2334,7 +2327,7 @@ class ProcurementUiController extends Controller
                 ->withErrors(['excel_file' => 'Header `vendor` atau `vendor_code` wajib ada di Excel.']);
         }
 
-        $toNullableNumber = fn ($value): ?float => $this->parseLocalizedNumberValue($value);
+        $toNullableNumber = fn($value): ?float => $this->parseLocalizedNumberValue($value);
 
         $toBoolean = static function ($value, bool $default = true): bool {
             $normalized = strtolower(trim((string) $value));
@@ -2772,6 +2765,173 @@ class ProcurementUiController extends Controller
         ));
     }
 
+    public function profitLossReport(Request $request): View
+    {
+        ['startDate' => $startDate, 'endDate' => $endDate] = $this->resolveProfitLossPeriod($request);
+        $report = $this->buildProfitLossReportData($startDate, $endDate);
+
+        return view('procurement.finance.profit-loss.index', [
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'realizedRevenue' => $report['realizedRevenue'],
+            'cogs' => $report['cogs'],
+            'grossProfit' => $report['grossProfit'],
+            'paidExpense' => $report['paidExpense'],
+            'netProfit' => $report['netProfit'],
+            'sppgRows' => $report['sppgRows'],
+            'totalInvoicedDocuments' => $report['totalInvoicedDocuments'],
+        ]);
+    }
+
+    public function exportProfitLossExcel(Request $request): Response
+    {
+        ['startDate' => $startDate, 'endDate' => $endDate] = $this->resolveProfitLossPeriod($request);
+        $report = $this->buildProfitLossReportData($startDate, $endDate);
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $sheet->fromArray([
+            ['LAPORAN LABA RUGI'],
+            ['Periode', $startDate . ' s/d ' . $endDate],
+            [],
+            ['Pendapatan Realisasi', (float) $report['realizedRevenue']],
+            ['HPP (COGS)', (float) $report['cogs']],
+            ['Laba Kotor', (float) $report['grossProfit']],
+            ['Realisasi Pembayaran', (float) $report['paidExpense']],
+            ['Laba Bersih (Operasional)', (float) $report['netProfit']],
+            ['Total Invoice', (int) $report['totalInvoicedDocuments']],
+            [],
+            ['SPPG', 'Pendapatan Realisasi', 'HPP (COGS)', 'Laba Kotor'],
+        ], null, 'A1');
+
+        $row = 12;
+        foreach ($report['sppgRows'] as $item) {
+            $sheet->fromArray([
+                $item['sppg_name'],
+                (float) $item['realized_revenue'],
+                (float) $item['cogs'],
+                (float) $item['gross_profit'],
+            ], null, 'A' . $row);
+            $row++;
+        }
+
+        $filename = 'profit-loss-' . $startDate . '-to-' . $endDate . '.xlsx';
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    public function downloadProfitLossPdf(Request $request): Response|RedirectResponse
+    {
+        ['startDate' => $startDate, 'endDate' => $endDate] = $this->resolveProfitLossPeriod($request);
+        $report = $this->buildProfitLossReportData($startDate, $endDate);
+
+        return $this->downloadPdfFromView('procurement.finance.profit-loss.report-pdf', [
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'realizedRevenue' => $report['realizedRevenue'],
+            'cogs' => $report['cogs'],
+            'grossProfit' => $report['grossProfit'],
+            'paidExpense' => $report['paidExpense'],
+            'netProfit' => $report['netProfit'],
+            'sppgRows' => $report['sppgRows'],
+            'totalInvoicedDocuments' => $report['totalInvoicedDocuments'],
+            'generatedAt' => now(),
+        ], 'profit-loss-' . $startDate . '-to-' . $endDate . '.pdf', 'a4', 'landscape');
+    }
+
+    private function resolveProfitLossPeriod(Request $request): array
+    {
+        $startDate = $request->filled('start_date')
+            ? Carbon::parse((string) $request->input('start_date'))->startOfDay()->toDateString()
+            : now()->startOfMonth()->toDateString();
+
+        $endDate = $request->filled('end_date')
+            ? Carbon::parse((string) $request->input('end_date'))->endOfDay()->toDateString()
+            : now()->endOfMonth()->toDateString();
+
+        if ($startDate > $endDate) {
+            [$startDate, $endDate] = [$endDate, $startDate];
+        }
+
+        return [
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+        ];
+    }
+
+    private function buildProfitLossReportData(string $startDate, string $endDate): array
+    {
+        $invoicedDeliveryProfitBaseQuery = DB::table('invoices')
+            ->join('deliveries', 'deliveries.id', '=', 'invoices.delivery_id')
+            ->join('purchase_orders', 'purchase_orders.id', '=', 'deliveries.purchase_order_id')
+            ->join('purchase_order_items', 'purchase_order_items.purchase_order_id', '=', 'purchase_orders.id')
+            ->leftJoin('products', 'products.id', '=', 'purchase_order_items.product_id')
+            ->leftJoin('sppgs', 'sppgs.id', '=', 'invoices.sppg_id')
+            ->whereNull('invoices.deleted_at')
+            ->whereNull('deliveries.deleted_at')
+            ->whereNull('purchase_orders.deleted_at')
+            ->whereNull('purchase_order_items.deleted_at')
+            ->whereBetween('invoices.invoice_date', [$startDate, $endDate]);
+
+        $profitSummary = (clone $invoicedDeliveryProfitBaseQuery)
+            ->selectRaw('COALESCE(SUM(purchase_order_items.quantity * COALESCE(products.selling_price, purchase_order_items.unit_price)), 0) as realized_revenue')
+            ->selectRaw('COALESCE(SUM(purchase_order_items.subtotal), 0) as cogs')
+            ->first();
+
+        $realizedRevenue = (float) ($profitSummary->realized_revenue ?? 0);
+        $cogs = (float) ($profitSummary->cogs ?? 0);
+        $grossProfit = $realizedRevenue - $cogs;
+
+        $paidExpense = (float) Payment::query()
+            ->whereIn('status', [PaymentStatus::APPROVED->value, PaymentStatus::PAID->value])
+            ->whereBetween('payment_date', [$startDate, $endDate])
+            ->sum('amount');
+
+        $sppgRows = (clone $invoicedDeliveryProfitBaseQuery)
+            ->selectRaw('invoices.sppg_id as sppg_id')
+            ->selectRaw('COALESCE(sppgs.name, "-") as sppg_name')
+            ->selectRaw('COALESCE(SUM(purchase_order_items.quantity * COALESCE(products.selling_price, purchase_order_items.unit_price)), 0) as realized_revenue')
+            ->selectRaw('COALESCE(SUM(purchase_order_items.subtotal), 0) as cogs')
+            ->groupBy('invoices.sppg_id', 'sppgs.name')
+            ->orderBy('sppg_name')
+            ->get()
+            ->map(function ($row) {
+                $realizedRevenue = (float) ($row->realized_revenue ?? 0);
+                $cogs = (float) ($row->cogs ?? 0);
+
+                return [
+                    'sppg_id' => (int) ($row->sppg_id ?? 0),
+                    'sppg_name' => (string) ($row->sppg_name ?? '-'),
+                    'realized_revenue' => $realizedRevenue,
+                    'cogs' => $cogs,
+                    'gross_profit' => $realizedRevenue - $cogs,
+                ];
+            })
+            ->values()
+            ->all();
+
+        $totalInvoicedDocuments = Invoice::query()
+            ->whereBetween('invoice_date', [$startDate, $endDate])
+            ->whereNull('deleted_at')
+            ->count();
+
+        return [
+            'realizedRevenue' => $realizedRevenue,
+            'cogs' => $cogs,
+            'grossProfit' => $grossProfit,
+            'paidExpense' => $paidExpense,
+            'netProfit' => $grossProfit,
+            'sppgRows' => $sppgRows,
+            'totalInvoicedDocuments' => $totalInvoicedDocuments,
+        ];
+    }
+
     public function kwitansi(Request $request): View
     {
         $selectedVendorId = $request->filled('vendor') ? (int) $request->integer('vendor') : null;
@@ -2783,7 +2943,7 @@ class ProcurementUiController extends Controller
 
         $kwitansis = Kwitansi::query()
             ->with(['vendor', 'creator', 'invoices'])
-            ->when($selectedVendorId, fn ($query) => $query->where('vendor_id', $selectedVendorId))
+            ->when($selectedVendorId, fn($query) => $query->where('vendor_id', $selectedVendorId))
             ->latest('receipt_date')
             ->latest('id')
             ->paginate(15)
@@ -2792,7 +2952,7 @@ class ProcurementUiController extends Controller
         $availableInvoices = Invoice::query()
             ->with(['sppg', 'vendor'])
             ->where('status', '!=', DocumentStatus::PAID->value)
-            ->when($selectedVendorId, fn ($query) => $query->where('vendor_id', $selectedVendorId))
+            ->when($selectedVendorId, fn($query) => $query->where('vendor_id', $selectedVendorId))
             ->whereDoesntHave('kwitansis')
             ->orderBy('invoice_date')
             ->orderBy('number')
@@ -2821,7 +2981,7 @@ class ProcurementUiController extends Controller
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $invoiceIds = collect($validated['invoice_ids'])->map(fn ($id) => (int) $id)->unique()->values();
+        $invoiceIds = collect($validated['invoice_ids'])->map(fn($id) => (int) $id)->unique()->values();
 
         $invoices = Invoice::query()
             ->whereIn('id', $invoiceIds)
@@ -2843,7 +3003,7 @@ class ProcurementUiController extends Controller
                 ->withInput();
         }
 
-        $totalAmount = (float) $invoices->sum(fn (Invoice $invoice) => (float) $invoice->total_amount);
+        $totalAmount = (float) $invoices->sum(fn(Invoice $invoice) => (float) $invoice->total_amount);
 
         $kwitansi = DB::transaction(function () use ($validated, $invoices, $totalAmount) {
             $kwitansi = Kwitansi::query()->create([
@@ -2885,7 +3045,7 @@ class ProcurementUiController extends Controller
 
         return redirect()
             ->route('ui.kwitansi.index', ['vendor' => $validated['vendor_id']])
-            ->with('success', 'Kwitansi berhasil dibuat dari '.count($validated['invoice_ids']).' invoice.');
+            ->with('success', 'Kwitansi berhasil dibuat dari ' . count($validated['invoice_ids']) . ' invoice.');
     }
 
     public function downloadKwitansiPdf(Kwitansi $kwitansi): Response
@@ -2914,7 +3074,7 @@ class ProcurementUiController extends Controller
 
         $firstSppgName = $kwitansi->invoices->first()?->sppg?->name;
 
-        $pdf = Pdf::loadView('procurement.finance.kwitansi.pdf', [
+        return $this->downloadPdfFromView('procurement.finance.kwitansi.pdf', [
             'kwitansi' => $kwitansi,
             'vendor' => $kwitansi->vendor,
             'rows' => $rows,
@@ -2924,9 +3084,7 @@ class ProcurementUiController extends Controller
             'logoVendor' => $vendorLogo,
             'hasCustomVendorLogo' => $hasCustomVendorLogo,
             'ownerName' => $ownerName,
-        ])->setPaper('a4', 'portrait');
-
-        return $pdf->download($kwitansi->number.'.pdf');
+        ], $kwitansi->number . '.pdf', 'a4', 'portrait');
     }
 
     public function payments(Request $request): View
@@ -2938,15 +3096,15 @@ class ProcurementUiController extends Controller
         if ($request->filled('invoice')) {
             $selectedInvoice = Invoice::query()
                 ->select(['id', 'number'])
-                ->when($sppgScopeId !== null, fn ($query) => $query->where('sppg_id', $this->scopedId($sppgScopeId)))
+                ->when($sppgScopeId !== null, fn($query) => $query->where('sppg_id', $this->scopedId($sppgScopeId)))
                 ->find((int) $request->integer('invoice'));
         }
 
         $payments = Payment::query()
             ->with(['invoice:id,number,sppg_id', 'invoice.sppg:id,name', 'payer:id,name', 'proofUploader:id,name', 'approver:id,name'])
-            ->when($request->filled('invoice') && $selectedInvoice, fn ($query) => $query->where('invoice_id', (int) $selectedInvoice->id))
+            ->when($request->filled('invoice') && $selectedInvoice, fn($query) => $query->where('invoice_id', (int) $selectedInvoice->id))
             ->when($sppgScopeId !== null, function ($query) use ($sppgScopeId) {
-                $query->whereHas('invoice', fn ($invoiceQuery) => $invoiceQuery->where('sppg_id', $this->scopedId($sppgScopeId)));
+                $query->whereHas('invoice', fn($invoiceQuery) => $invoiceQuery->where('sppg_id', $this->scopedId($sppgScopeId)));
             })
             ->latest('payment_date')
             ->paginate(20)
@@ -2980,15 +3138,15 @@ class ProcurementUiController extends Controller
                 'reviewer:id,name',
                 'approver:id,name',
             ])
-            ->when($selectedStatus, fn ($query) => $query->where('status', $selectedStatus))
-            ->when($selectedFundSource, fn ($query) => $query->where('fund_source', $selectedFundSource))
+            ->when($selectedStatus, fn($query) => $query->where('status', $selectedStatus))
+            ->when($selectedFundSource, fn($query) => $query->where('fund_source', $selectedFundSource))
             ->latest('created_at')
             ->paginate(20)
             ->withQueryString();
 
         $statsQuery = PurchaseFundingRequest::query()
-            ->when($selectedStatus, fn ($query) => $query->where('status', $selectedStatus))
-            ->when($selectedFundSource, fn ($query) => $query->where('fund_source', $selectedFundSource));
+            ->when($selectedStatus, fn($query) => $query->where('status', $selectedStatus))
+            ->when($selectedFundSource, fn($query) => $query->where('fund_source', $selectedFundSource));
 
         $totalRequested = (float) (clone $statsQuery)->sum('requested_amount');
         $totalApproved = (float) (clone $statsQuery)->sum('approved_amount');
@@ -3060,8 +3218,8 @@ class ProcurementUiController extends Controller
 
         $fundingRequests = PurchaseFundingRequest::query()
             ->with(['purchaseOrder:id,number', 'vendor:id,name', 'sppg:id,name', 'submitter:id,name', 'reviewer:id,name', 'approver:id,name'])
-            ->when($selectedStatus, fn ($query) => $query->where('status', $selectedStatus))
-            ->when($selectedFundSource, fn ($query) => $query->where('fund_source', $selectedFundSource))
+            ->when($selectedStatus, fn($query) => $query->where('status', $selectedStatus))
+            ->when($selectedFundSource, fn($query) => $query->where('fund_source', $selectedFundSource))
             ->orderByDesc('created_at')
             ->get();
 
@@ -3112,12 +3270,12 @@ class ProcurementUiController extends Controller
                 $fundingRequest->approver?->name,
                 optional($fundingRequest->created_at)->format('Y-m-d H:i:s'),
                 optional($fundingRequest->settled_at)->format('Y-m-d H:i:s'),
-            ], null, 'A'.$row);
+            ], null, 'A' . $row);
 
             $row++;
         }
 
-        $filename = 'purchase-funding-requests-'.now()->format('Ymd_His').'.xlsx';
+        $filename = 'purchase-funding-requests-' . now()->format('Ymd_His') . '.xlsx';
 
         return response()->streamDownload(function () use ($spreadsheet) {
             $writer = new Xlsx($spreadsheet);
@@ -3142,21 +3300,21 @@ class ProcurementUiController extends Controller
 
         $fundingRequests = PurchaseFundingRequest::query()
             ->with(['purchaseOrder:id,number', 'vendor:id,name', 'sppg:id,name'])
-            ->when($selectedStatus, fn ($query) => $query->where('status', $selectedStatus))
-            ->when($selectedFundSource, fn ($query) => $query->where('fund_source', $selectedFundSource))
+            ->when($selectedStatus, fn($query) => $query->where('status', $selectedStatus))
+            ->when($selectedFundSource, fn($query) => $query->where('fund_source', $selectedFundSource))
             ->orderByDesc('created_at')
             ->get();
 
         $statsQuery = PurchaseFundingRequest::query()
-            ->when($selectedStatus, fn ($query) => $query->where('status', $selectedStatus))
-            ->when($selectedFundSource, fn ($query) => $query->where('fund_source', $selectedFundSource));
+            ->when($selectedStatus, fn($query) => $query->where('status', $selectedStatus))
+            ->when($selectedFundSource, fn($query) => $query->where('fund_source', $selectedFundSource));
 
         $totalRequested = (float) (clone $statsQuery)->sum('requested_amount');
         $totalApproved = (float) (clone $statsQuery)->sum('approved_amount');
         $totalDisbursed = (float) (clone $statsQuery)->sum('disbursed_amount');
         $totalSpent = (float) (clone $statsQuery)->sum('spent_amount');
 
-        $pdf = Pdf::loadView('procurement.finance.purchase-funding-requests.report-pdf', [
+        return $this->downloadPdfFromView('procurement.finance.purchase-funding-requests.report-pdf', [
             'fundingRequests' => $fundingRequests,
             'selectedStatus' => $selectedStatus,
             'selectedFundSource' => $selectedFundSource,
@@ -3168,9 +3326,72 @@ class ProcurementUiController extends Controller
                 'remaining' => max($totalDisbursed - $totalSpent, 0),
             ],
             'generatedAt' => now(),
-        ])->setPaper('a4', 'landscape');
+        ], 'purchase-funding-requests-' . now()->format('Ymd_His') . '.pdf', 'a4', 'landscape');
+    }
 
-        return $pdf->download('purchase-funding-requests-'.now()->format('Ymd_His').'.pdf');
+    private function downloadPdfFromView(string $view, array $data, string $filename, string $paper = 'a4', string $orientation = 'portrait'): Response|RedirectResponse
+    {
+        if (! extension_loaded('gd')) {
+            Log::warning('PDF generation running without GD extension. Attempting to render without inline images.', [
+                'view' => $view,
+            ]);
+            $data = $this->stripInlineImageDataUris($data);
+        }
+
+        try {
+            return Pdf::loadView($view, $data)
+                ->setPaper($paper, $orientation)
+                ->download($filename);
+        } catch (\Throwable $exception) {
+            return $this->pdfRenderingErrorResponse($exception, $view);
+        }
+    }
+
+    private function streamPdfFromView(string $view, array $data, string $filename, string $paper = 'a4', string $orientation = 'portrait'): Response|RedirectResponse
+    {
+        if (! extension_loaded('gd')) {
+            Log::warning('PDF stream generation running without GD extension. Attempting to render without inline images.', [
+                'view' => $view,
+            ]);
+            $data = $this->stripInlineImageDataUris($data);
+        }
+
+        try {
+            return Pdf::loadView($view, $data)
+                ->setPaper($paper, $orientation)
+                ->stream($filename);
+        } catch (\Throwable $exception) {
+            return $this->pdfRenderingErrorResponse($exception, $view);
+        }
+    }
+
+    private function stripInlineImageDataUris(array $data): array
+    {
+        foreach ($data as $key => $value) {
+            if (is_string($value) && str_starts_with($value, 'data:image/')) {
+                $data[$key] = null;
+            }
+        }
+
+        return $data;
+    }
+
+    private function pdfRenderingErrorResponse(\Throwable $exception, string $view): RedirectResponse
+    {
+        Log::error('PDF generation failed.', [
+            'view' => $view,
+            'message' => $exception->getMessage(),
+        ]);
+
+        if (str_contains(strtolower($exception->getMessage()), 'gd extension is required')) {
+            return redirect()->back()->withErrors([
+                'pdf' => 'Gagal membuat PDF karena ekstensi PHP GD belum aktif di server. Silakan aktifkan ekstensi GD lalu coba lagi.',
+            ]);
+        }
+
+        return redirect()->back()->withErrors([
+            'pdf' => 'Terjadi kendala saat membuat PDF. Silakan coba lagi atau hubungi admin.',
+        ]);
     }
 
     public function markAllNotificationsAsRead(Request $request): RedirectResponse
@@ -3181,6 +3402,27 @@ class ProcurementUiController extends Controller
         }
 
         return redirect()->back()->with('success', 'Semua notifikasi sudah ditandai sebagai dibaca.');
+    }
+
+    public function openNotification(Request $request, string $notification): RedirectResponse
+    {
+        $user = $request->user();
+        if (! $user) {
+            abort(401);
+        }
+
+        /** @var DatabaseNotification $notificationModel */
+        $notificationModel = $user->notifications()->findOrFail($notification);
+        if ($notificationModel->read_at === null) {
+            $notificationModel->markAsRead();
+        }
+
+        $payload = is_array($notificationModel->data) ? $notificationModel->data : [];
+        $targetUrl = is_string($payload['url'] ?? null) && trim((string) $payload['url']) !== ''
+            ? (string) $payload['url']
+            : route('ui.dashboard');
+
+        return redirect()->to($targetUrl);
     }
 
     public function updatePurchaseFundingOwnerApprovalThreshold(Request $request): RedirectResponse
@@ -3222,7 +3464,7 @@ class ProcurementUiController extends Controller
             'purchase_order_id' => $purchaseOrder->id,
             'title' => trim((string) ($validated['title'] ?? '')) !== ''
                 ? $validated['title']
-                : 'Pengajuan dana untuk '.$purchaseOrder->number,
+                : 'Pengajuan dana untuk ' . $purchaseOrder->number,
             'vendor_id' => $purchaseOrder->vendor_id,
             'sppg_id' => $purchaseOrder->sppg_id,
             'fund_source' => $validated['fund_source'],
@@ -3300,18 +3542,25 @@ class ProcurementUiController extends Controller
             $ownerRecipients = User::query()
                 ->whereIn('role', [UserRole::OWNER->value, UserRole::SUPER_ADMIN->value])
                 ->get();
+            $hasNotificationsTable = Schema::hasTable('notifications');
 
-            if ($ownerRecipients->isNotEmpty()) {
+            if ($hasNotificationsTable && $ownerRecipients->isNotEmpty()) {
                 Notification::send(
                     $ownerRecipients,
                     new PurchaseFundingNeedsOwnerApproval($purchaseFundingRequest, Auth::user())
                 );
+            } elseif (! $hasNotificationsTable) {
+                Log::warning('Skipping owner approval notification because notifications table is missing.', [
+                    'funding_request_id' => $purchaseFundingRequest->id,
+                    'recipient_count' => $ownerRecipients->count(),
+                ]);
             }
 
             $this->writeAudit($request, 'purchase-funding-request.owner_notified', $purchaseFundingRequest, null, [
                 'status' => $purchaseFundingRequest->status?->value,
                 'recipient_count' => $ownerRecipients->count(),
                 'reviewed_amount' => $reviewedAmount,
+                'notifications_table_exists' => $hasNotificationsTable,
             ]);
         }
 
@@ -3674,12 +3923,12 @@ class ProcurementUiController extends Controller
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'role' => ['required', Rule::in($assignableRoles)],
             'sppg_id' => [
-                Rule::requiredIf(fn () => $request->input('role') === UserRole::SPPG_USER->value),
+                Rule::requiredIf(fn() => $request->input('role') === UserRole::SPPG_USER->value),
                 'nullable',
                 'exists:sppgs,id',
             ],
             'vendor_id' => [
-                Rule::requiredIf(fn () => in_array($request->input('role'), [UserRole::VENDOR_ADMIN->value, UserRole::EXPEDITION->value], true)),
+                Rule::requiredIf(fn() => in_array($request->input('role'), [UserRole::VENDOR_ADMIN->value, UserRole::EXPEDITION->value], true)),
                 'nullable',
                 'exists:vendors,id',
             ],
@@ -3742,12 +3991,12 @@ class ProcurementUiController extends Controller
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
             'role' => ['required', Rule::in($assignableRoles)],
             'sppg_id' => [
-                Rule::requiredIf(fn () => $request->input('role') === UserRole::SPPG_USER->value),
+                Rule::requiredIf(fn() => $request->input('role') === UserRole::SPPG_USER->value),
                 'nullable',
                 'exists:sppgs,id',
             ],
             'vendor_id' => [
-                Rule::requiredIf(fn () => in_array($request->input('role'), [UserRole::VENDOR_ADMIN->value, UserRole::EXPEDITION->value], true)),
+                Rule::requiredIf(fn() => in_array($request->input('role'), [UserRole::VENDOR_ADMIN->value, UserRole::EXPEDITION->value], true)),
                 'nullable',
                 'exists:vendors,id',
             ],
@@ -3823,9 +4072,9 @@ class ProcurementUiController extends Controller
         $deliveries = Delivery::query()
             ->with(['vendor:id,name', 'purchaseOrder:id,order_date,expected_date'])
             ->whereNotNull('vendor_id')
-            ->when($selectedVendorId, fn ($query) => $query->where('vendor_id', $selectedVendorId))
-            ->when($dateFrom, fn ($query) => $query->whereDate('delivery_date', '>=', $dateFrom))
-            ->when($dateTo, fn ($query) => $query->whereDate('delivery_date', '<=', $dateTo))
+            ->when($selectedVendorId, fn($query) => $query->where('vendor_id', $selectedVendorId))
+            ->when($dateFrom, fn($query) => $query->whereDate('delivery_date', '>=', $dateFrom))
+            ->when($dateTo, fn($query) => $query->whereDate('delivery_date', '<=', $dateTo))
             ->orderBy('delivery_date')
             ->get();
 
@@ -3932,10 +4181,10 @@ class ProcurementUiController extends Controller
 
         $histories = ProductPriceHistory::query()
             ->with(['product:id,sku,name', 'vendor:id,name'])
-            ->when($selectedProductId, fn ($query) => $query->where('product_id', $selectedProductId))
-            ->when($selectedVendorId, fn ($query) => $query->where('vendor_id', $selectedVendorId))
-            ->when($dateFrom, fn ($query) => $query->whereDate('effective_at', '>=', $dateFrom))
-            ->when($dateTo, fn ($query) => $query->whereDate('effective_at', '<=', $dateTo))
+            ->when($selectedProductId, fn($query) => $query->where('product_id', $selectedProductId))
+            ->when($selectedVendorId, fn($query) => $query->where('vendor_id', $selectedVendorId))
+            ->when($dateFrom, fn($query) => $query->whereDate('effective_at', '>=', $dateFrom))
+            ->when($dateTo, fn($query) => $query->whereDate('effective_at', '<=', $dateTo))
             ->orderBy('effective_at')
             ->orderBy('id')
             ->get();
@@ -3946,7 +4195,7 @@ class ProcurementUiController extends Controller
                 $first = $productHistories->first();
                 $last = $productHistories->last();
 
-                $prices = $productHistories->pluck('price')->map(fn ($price) => (float) $price)->all();
+                $prices = $productHistories->pluck('price')->map(fn($price) => (float) $price)->all();
                 $recordsCount = count($prices);
                 $min = $recordsCount > 0 ? min($prices) : 0.0;
                 $max = $recordsCount > 0 ? max($prices) : 0.0;
@@ -3971,7 +4220,7 @@ class ProcurementUiController extends Controller
                     'last_effective_at' => $last?->effective_at,
                 ];
             })
-            ->sortByDesc(fn ($row) => abs((float) $row->trend_percent))
+            ->sortByDesc(fn($row) => abs((float) $row->trend_percent))
             ->values();
 
         $trendRows = $this->paginateCollection($rows, 20);
@@ -3980,8 +4229,8 @@ class ProcurementUiController extends Controller
             'total_products' => $rows->count(),
             'total_records' => (int) $rows->sum('records_count'),
             'avg_trend_percent' => (float) ($rows->avg('trend_percent') ?? 0),
-            'products_up' => (int) $rows->filter(fn ($row) => (float) $row->trend_percent > 0)->count(),
-            'products_down' => (int) $rows->filter(fn ($row) => (float) $row->trend_percent < 0)->count(),
+            'products_up' => (int) $rows->filter(fn($row) => (float) $row->trend_percent > 0)->count(),
+            'products_down' => (int) $rows->filter(fn($row) => (float) $row->trend_percent < 0)->count(),
         ];
 
         return view('procurement.analytics.price-trends.index', compact(
@@ -4034,10 +4283,10 @@ class ProcurementUiController extends Controller
 
         $auditTrails = AuditTrail::query()
             ->with('user')
-            ->when($selectedEvent, fn ($query) => $query->where('event', $selectedEvent))
-            ->when($selectedUserId, fn ($query) => $query->where('user_id', $selectedUserId))
-            ->when($dateFrom, fn ($query) => $query->whereDate('created_at', '>=', $dateFrom))
-            ->when($dateTo, fn ($query) => $query->whereDate('created_at', '<=', $dateTo))
+            ->when($selectedEvent, fn($query) => $query->where('event', $selectedEvent))
+            ->when($selectedUserId, fn($query) => $query->where('user_id', $selectedUserId))
+            ->when($dateFrom, fn($query) => $query->whereDate('created_at', '>=', $dateFrom))
+            ->when($dateTo, fn($query) => $query->whereDate('created_at', '<=', $dateTo))
             ->latest('created_at')
             ->paginate(20)
             ->withQueryString();
@@ -4085,7 +4334,7 @@ class ProcurementUiController extends Controller
             'notes' => ['nullable', 'string'],
             'is_additional' => ['nullable', 'boolean'],
             'additional_to_po_id' => [
-                Rule::requiredIf(fn () => $request->boolean('is_additional')),
+                Rule::requiredIf(fn() => $request->boolean('is_additional')),
                 'nullable',
                 'exists:purchase_orders,id',
             ],
@@ -4106,14 +4355,14 @@ class ProcurementUiController extends Controller
             if ($productId <= 0 && $adHocName === '') {
                 return redirect()
                     ->route('ui.purchase-requests.index')
-                    ->withErrors(['items.'.$index.'.product_id' => 'Pilih produk katalog atau isi nama produk non katalog.'])
+                    ->withErrors(['items.' . $index . '.product_id' => 'Pilih produk katalog atau isi nama produk non katalog.'])
                     ->withInput();
             }
 
             if ($adHocName !== '' && $adHocUnit === '') {
                 return redirect()
                     ->route('ui.purchase-requests.index')
-                    ->withErrors(['items.'.$index.'.ad_hoc_unit' => 'Satuan wajib diisi untuk produk non katalog.'])
+                    ->withErrors(['items.' . $index . '.ad_hoc_unit' => 'Satuan wajib diisi untuk produk non katalog.'])
                     ->withInput();
             }
         }
@@ -4142,11 +4391,11 @@ class ProcurementUiController extends Controller
                 if ($isAdditional) {
                     $additionalMarker = '[BARANG TAMBAHAN]';
                     $targetPoNumber = PurchaseOrder::query()->whereKey($additionalToPoId)->value('number');
-                    $referenceText = $targetPoNumber ? ' Referensi PO: '.$targetPoNumber.'.' : '';
-                    $notes = trim($additionalMarker.' '.$referenceText.' '.($notes !== '' ? $notes : ''));
+                    $referenceText = $targetPoNumber ? ' Referensi PO: ' . $targetPoNumber . '.' : '';
+                    $notes = trim($additionalMarker . ' ' . $referenceText . ' ' . ($notes !== '' ? $notes : ''));
                 }
                 if ($hasAdHocItems && ! str_contains($notes, '[NON KATALOG]')) {
-                    $notes = trim('[NON KATALOG] '.($notes !== '' ? $notes : ''));
+                    $notes = trim('[NON KATALOG] ' . ($notes !== '' ? $notes : ''));
                 }
 
                 $purchaseRequest = PurchaseRequest::query()->create([
@@ -4364,7 +4613,7 @@ class ProcurementUiController extends Controller
 
                 $purchaseOrder->update([
                     'status' => DocumentStatus::SUBMITTED,
-                    'notes' => trim((string) ($purchaseOrder->notes ?? '').' [MENUNGGU APPROVAL OWNER: '.$approvalReasonText.']'),
+                    'notes' => trim((string) ($purchaseOrder->notes ?? '') . ' [MENUNGGU APPROVAL OWNER: ' . $approvalReasonText . ']'),
                 ]);
 
                 Approval::query()->create([
@@ -4373,17 +4622,17 @@ class ProcurementUiController extends Controller
                     'level' => 1,
                     'approver_id' => $ownerApproverId,
                     'status' => DocumentStatus::SUBMITTED,
-                    'note' => 'Menunggu approval owner ('.$approvalReasonText.'). Total PO: '.$poTotalAmount.', threshold: '.$poOwnerApprovalThreshold,
+                    'note' => 'Menunggu approval owner (' . $approvalReasonText . '). Total PO: ' . $poTotalAmount . ', threshold: ' . $poOwnerApprovalThreshold,
                     'approved_at' => null,
                 ]);
             }
 
             if ($additionalTargetPo) {
                 $existingNotes = trim((string) ($purchaseOrder->notes ?? ''));
-                $additionalNote = '[BARANG TAMBAHAN] dari PR '.$purchaseRequest->number;
+                $additionalNote = '[BARANG TAMBAHAN] dari PR ' . $purchaseRequest->number;
                 if (! str_contains($existingNotes, $additionalNote)) {
                     $purchaseOrder->update([
-                        'notes' => trim(($existingNotes !== '' ? $existingNotes.PHP_EOL : '').$additionalNote),
+                        'notes' => trim(($existingNotes !== '' ? $existingNotes . PHP_EOL : '') . $additionalNote),
                     ]);
                 }
             }
@@ -4401,10 +4650,10 @@ class ProcurementUiController extends Controller
         });
 
         if (! empty($result['requires_owner_approval'])) {
-            $message = 'Purchase Order '.$result['po_number'].' berhasil dibuat dan menunggu approval owner'.(! empty($result['owner_approval_reason']) ? ' ('.$result['owner_approval_reason'].')' : '').'.';
+            $message = 'Purchase Order ' . $result['po_number'] . ' berhasil dibuat dan menunggu approval owner' . (! empty($result['owner_approval_reason']) ? ' (' . $result['owner_approval_reason'] . ')' : '') . '.';
         } else {
             $message = ! empty($result['is_additional'])
-                ? 'Barang tambahan berhasil ditambahkan ke PO '.$result['po_number'].' agar tetap satu alur invoice.'
+                ? 'Barang tambahan berhasil ditambahkan ke PO ' . $result['po_number'] . ' agar tetap satu alur invoice.'
                 : 'Purchase Order berhasil digenerate.';
         }
 
@@ -4731,7 +4980,7 @@ class ProcurementUiController extends Controller
 
         if (! $file->isValid()) {
             return redirect()->back()->withErrors([
-                $fieldName => $label.' gagal diunggah. Silakan pilih file lain.',
+                $fieldName => $label . ' gagal diunggah. Silakan pilih file lain.',
             ])->withInput();
         }
 
@@ -4739,28 +4988,28 @@ class ProcurementUiController extends Controller
         $allowedMaxKb = $roleBasedMaxKb[$currentRole] ?? $defaultMaxKb;
         if ((int) ceil($file->getSize() / 1024) > $allowedMaxKb) {
             return redirect()->back()->withErrors([
-                $fieldName => $label.' melebihi batas ukuran role Anda (maks '.number_format($allowedMaxKb / 1024, 2, ',', '.').' MB).',
+                $fieldName => $label . ' melebihi batas ukuran role Anda (maks ' . number_format($allowedMaxKb / 1024, 2, ',', '.') . ' MB).',
             ])->withInput();
         }
 
         $extension = strtolower((string) $file->getClientOriginalExtension());
         if (! in_array($extension, $allowedExtensions, true)) {
             return redirect()->back()->withErrors([
-                $fieldName => $label.' memiliki ekstensi file yang tidak diizinkan.',
+                $fieldName => $label . ' memiliki ekstensi file yang tidak diizinkan.',
             ])->withInput();
         }
 
         $detectedMime = strtolower((string) ($file->getMimeType() ?? ''));
         if (! in_array($detectedMime, $allowedMimeTypes, true)) {
             return redirect()->back()->withErrors([
-                $fieldName => $label.' memiliki tipe file tidak valid (deteksi MIME ditolak).',
+                $fieldName => $label . ' memiliki tipe file tidak valid (deteksi MIME ditolak).',
             ])->withInput();
         }
 
         $originalName = strtolower((string) $file->getClientOriginalName());
         if (str_contains($originalName, '..') || preg_match('/\.(php\d*|phtml|phar|cgi|pl|py|sh|exe|bat|cmd|com|js|html?)$/', $originalName)) {
             return redirect()->back()->withErrors([
-                $fieldName => $label.' ditolak karena nama file berisiko.',
+                $fieldName => $label . ' ditolak karena nama file berisiko.',
             ])->withInput();
         }
 
@@ -4774,7 +5023,7 @@ class ProcurementUiController extends Controller
             return 'Nol Rupiah';
         }
 
-        return trim($this->terbilangInteger($value)).' Rupiah';
+        return trim($this->terbilangInteger($value)) . ' Rupiah';
     }
 
     private function terbilangInteger(int $value): string
@@ -4799,38 +5048,38 @@ class ProcurementUiController extends Controller
         }
 
         if ($value < 20) {
-            return trim($this->terbilangInteger($value - 10).' Belas');
+            return trim($this->terbilangInteger($value - 10) . ' Belas');
         }
 
         if ($value < 100) {
-            return trim($this->terbilangInteger((int) floor($value / 10)).' Puluh '.$this->terbilangInteger($value % 10));
+            return trim($this->terbilangInteger((int) floor($value / 10)) . ' Puluh ' . $this->terbilangInteger($value % 10));
         }
 
         if ($value < 200) {
-            return trim('Seratus '.$this->terbilangInteger($value - 100));
+            return trim('Seratus ' . $this->terbilangInteger($value - 100));
         }
 
         if ($value < 1000) {
-            return trim($this->terbilangInteger((int) floor($value / 100)).' Ratus '.$this->terbilangInteger($value % 100));
+            return trim($this->terbilangInteger((int) floor($value / 100)) . ' Ratus ' . $this->terbilangInteger($value % 100));
         }
 
         if ($value < 2000) {
-            return trim('Seribu '.$this->terbilangInteger($value - 1000));
+            return trim('Seribu ' . $this->terbilangInteger($value - 1000));
         }
 
         if ($value < 1000000) {
-            return trim($this->terbilangInteger((int) floor($value / 1000)).' Ribu '.$this->terbilangInteger($value % 1000));
+            return trim($this->terbilangInteger((int) floor($value / 1000)) . ' Ribu ' . $this->terbilangInteger($value % 1000));
         }
 
         if ($value < 1000000000) {
-            return trim($this->terbilangInteger((int) floor($value / 1000000)).' Juta '.$this->terbilangInteger($value % 1000000));
+            return trim($this->terbilangInteger((int) floor($value / 1000000)) . ' Juta ' . $this->terbilangInteger($value % 1000000));
         }
 
         if ($value < 1000000000000) {
-            return trim($this->terbilangInteger((int) floor($value / 1000000000)).' Miliar '.$this->terbilangInteger($value % 1000000000));
+            return trim($this->terbilangInteger((int) floor($value / 1000000000)) . ' Miliar ' . $this->terbilangInteger($value % 1000000000));
         }
 
-        return trim($this->terbilangInteger((int) floor($value / 1000000000000)).' Triliun '.$this->terbilangInteger($value % 1000000000000));
+        return trim($this->terbilangInteger((int) floor($value / 1000000000000)) . ' Triliun ' . $this->terbilangInteger($value % 1000000000000));
     }
 
     private function imageDataUri(string $absolutePath, bool $circular = false): ?string
@@ -4911,7 +5160,7 @@ class ProcurementUiController extends Controller
                         imagedestroy($sourceImage);
 
                         if ($circleBinary !== '') {
-                            return 'data:image/png;base64,'.base64_encode($circleBinary);
+                            return 'data:image/png;base64,' . base64_encode($circleBinary);
                         }
                     }
 
@@ -4925,7 +5174,7 @@ class ProcurementUiController extends Controller
             return null;
         }
 
-        return 'data:'.$mime.';base64,'.base64_encode($binary);
+        return 'data:' . $mime . ';base64,' . base64_encode($binary);
     }
 
     private function resolveVendorLogoDataUri(?Vendor $vendor, bool $circular = false): array
@@ -4944,7 +5193,7 @@ class ProcurementUiController extends Controller
 
                 foreach (['png', 'jpg', 'jpeg', 'webp'] as $ext) {
                     foreach ($logoBaseDirs as $baseDir) {
-                        $candidatePaths[] = public_path($baseDir.'/'.$slug.'.'.$ext);
+                        $candidatePaths[] = public_path($baseDir . '/' . $slug . '.' . $ext);
                     }
                 }
             }
@@ -4957,11 +5206,13 @@ class ProcurementUiController extends Controller
             }
         }
 
-        foreach ([
-            public_path('images/smp-logo.png'),
-            public_path('images/logo-smp.png'),
-            public_path('images/logo-bgn.png'),
-        ] as $fallbackPath) {
+        foreach (
+            [
+                public_path('images/smp-logo.png'),
+                public_path('images/logo-smp.png'),
+                public_path('images/logo-bgn.png'),
+            ] as $fallbackPath
+        ) {
             $uri = $this->imageDataUri($fallbackPath, $circular);
             if ($uri !== null) {
                 return [$uri, false];
@@ -4986,7 +5237,7 @@ class ProcurementUiController extends Controller
 
         if (! $vendor) {
             $vendor = Vendor::query()
-                ->whereRaw('LOWER(name) LIKE ?', ['%'.$lowerName.'%'])
+                ->whereRaw('LOWER(name) LIKE ?', ['%' . $lowerName . '%'])
                 ->first();
         }
 
@@ -5044,7 +5295,7 @@ class ProcurementUiController extends Controller
 
         $vendors = Vendor::query()
             ->where('is_active', true)
-            ->when($vendorScopeId !== null, fn ($query) => $query->whereKey($vendorScopeId > 0 ? $vendorScopeId : -1))
+            ->when($vendorScopeId !== null, fn($query) => $query->whereKey($vendorScopeId > 0 ? $vendorScopeId : -1))
             ->orderBy('name')
             ->get(['id', 'name']);
 
@@ -5109,7 +5360,7 @@ class ProcurementUiController extends Controller
 
         return array_values(array_filter(
             $roles,
-            static fn (string $role): bool => $role !== UserRole::SUPER_ADMIN->value
+            static fn(string $role): bool => $role !== UserRole::SUPER_ADMIN->value
         ));
     }
 }

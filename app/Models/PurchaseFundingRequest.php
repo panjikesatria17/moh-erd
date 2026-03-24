@@ -8,6 +8,40 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property string $number
+ * @property int $purchase_order_id
+ * @property string $title
+ * @property int $vendor_id
+ * @property int $sppg_id
+ * @property ?string $fund_source
+ * @property string $requested_amount
+ * @property ?string $reviewed_amount
+ * @property ?string $approved_amount
+ * @property string $disbursed_amount
+ * @property string $spent_amount
+ * @property FundingRequestStatus $status
+ * @property int $submitted_by
+ * @property ?int $reviewed_by
+ * @property ?string $reviewed_at
+ * @property ?int $approved_by
+ * @property ?string $approved_at
+ * @property ?int $rejected_by
+ * @property ?string $rejected_at
+ * @property ?int $disbursed_by
+ * @property ?string $disbursed_at
+ * @property ?int $settled_by
+ * @property ?string $settled_at
+ * @property ?string $notes
+ * @property ?string $finance_notes
+ * @property ?string $owner_notes
+ * @property ?string $settlement_proof_path
+ * @property ?string $settlement_proof_uploaded_at
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property \Illuminate\Support\Carbon $updated_at
+ * @property ?\Illuminate\Support\Carbon $deleted_at
+ */
 class PurchaseFundingRequest extends Model
 {
     use HasFactory, SoftDeletes;

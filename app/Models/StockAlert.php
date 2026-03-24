@@ -7,6 +7,19 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property int $warehouse_id
+ * @property int $product_id
+ * @property string $current_balance
+ * @property string $minimum_stock_level
+ * @property bool $is_resolved
+ * @property ?string $resolved_at
+ * @property ?int $resolved_by
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property \Illuminate\Support\Carbon $updated_at
+ * @property ?\Illuminate\Support\Carbon $deleted_at
+ */
 class StockAlert extends Model
 {
     use HasFactory, SoftDeletes;

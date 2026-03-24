@@ -1,0 +1,24 @@
+parameters:
+    paths:
+        - app
+        - routes
+        - tests
+
+    level: 4
+
+    checkMissingIterableValueType: false
+    checkExplicitMixedMissingReturn: false
+    checkGenericClassInNonGenericObjectType: false
+    reportUnmatchedIgnoredErrors: false
+
+    ignoreErrors:
+        # Laravel and Eloquent-related ignores
+        - '#Call to an undefined method .*::query\(\)#'
+        - '#Call to an undefined static method .*::query\(\)#'
+        - '#Call to an undefined method.*query#'
+        - '#Call to an undefined function.*view|redirect|collect|abort|route|response|back#'
+        - '#Access to an undefined property.*\$#'
+        - '#Undefined property.*\$.*#'
+        - '#Call to an undefined method .*(toArray|update|fresh|loadMissing)#'
+        - '#Access to an undefined method.*\(#'
+        - '#Instantiated with .* but .* expects#'

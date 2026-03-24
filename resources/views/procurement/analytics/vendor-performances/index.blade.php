@@ -3,12 +3,15 @@
 @section('title', 'Vendor Performance')
 
 @section('content')
-    <div class="mb-4">
-        <h2 class="text-xl font-semibold">Vendor Performance</h2>
-        <p class="text-sm text-gray-500">Analitik performa vendor berbasis data pengiriman aktual.</p>
-    </div>
+    <x-ui.hero
+        class="mb-4"
+        eyebrow="Analytics & Compliance"
+        title="Vendor Performance"
+        description="Analitik performa vendor berbasis data pengiriman aktual."
+    />
 
-    <form method="GET" action="{{ route('ui.vendor-performances.index') }}" class="mb-4 rounded-xl border border-gray-200 bg-white p-3">
+    <x-ui.panel class="mb-4" title="Filter Performa Vendor">
+    <form method="GET" action="{{ route('ui.vendor-performances.index') }}" class="">
         <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-4">
             <select name="vendor_id" class="rounded-md border border-gray-300 px-3 py-2 text-sm">
                 <option value="">Semua Vendor</option>
@@ -24,27 +27,16 @@
             </div>
         </div>
     </form>
+    </x-ui.panel>
 
     <div class="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
-        <div class="rounded-xl border border-gray-200 bg-white p-4">
-            <p class="text-xs uppercase text-gray-500">Vendor Dinilai</p>
-            <p class="mt-1 text-xl font-semibold text-gray-900">{{ $summary['total_vendors'] ?? 0 }}</p>
-        </div>
-        <div class="rounded-xl border border-gray-200 bg-white p-4">
-            <p class="text-xs uppercase text-gray-500">Total Deliveries</p>
-            <p class="mt-1 text-xl font-semibold text-gray-900">{{ $summary['total_deliveries'] ?? 0 }}</p>
-        </div>
-        <div class="rounded-xl border border-gray-200 bg-white p-4">
-            <p class="text-xs uppercase text-gray-500">Rata-rata On Time</p>
-            <p class="mt-1 text-xl font-semibold text-emerald-700">{{ number_format((float) ($summary['avg_on_time_rate'] ?? 0), 2, ',', '.') }}%</p>
-        </div>
-        <div class="rounded-xl border border-gray-200 bg-white p-4">
-            <p class="text-xs uppercase text-gray-500">Rata-rata Score</p>
-            <p class="mt-1 text-xl font-semibold text-indigo-700">{{ number_format((float) ($summary['avg_score'] ?? 0), 2, ',', '.') }}</p>
-        </div>
+        <x-ui.stat-card label="Vendor Dinilai" value="{{ $summary['total_vendors'] ?? 0 }}" />
+        <x-ui.stat-card label="Total Deliveries" value="{{ $summary['total_deliveries'] ?? 0 }}" />
+        <x-ui.stat-card label="Rata-rata On Time" value="{{ number_format((float) ($summary['avg_on_time_rate'] ?? 0), 2, ',', '.') }}%" class="border-emerald-200 bg-emerald-50" />
+        <x-ui.stat-card label="Rata-rata Score" value="{{ number_format((float) ($summary['avg_score'] ?? 0), 2, ',', '.') }}" class="border-indigo-200 bg-indigo-50" />
     </div>
 
-    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+    <x-ui.panel title="Performa Vendor" subtitle="Ringkasan performa pengiriman per vendor" bodyClass="p-0">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 text-xs md:text-sm">
                 <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
@@ -81,7 +73,7 @@
                 </tbody>
             </table>
         </div>
-    </div>
+    </x-ui.panel>
 
     <div class="mt-4">{{ $performances->links() }}</div>
 @endsection

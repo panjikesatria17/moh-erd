@@ -5,46 +5,64 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Welcome - Yayasan Satria Merah Putih</title>
     <link rel="icon" type="image/png" href="{{ asset('images/smp-logo.png') }}">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    </style>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 @php
-    $welcomeBackgroundImage = config('ui.welcome_background_image');
-    $welcomeBackgroundPosition = config('ui.welcome_background_position', 'center');
+    $welcomeBackgroundImage = config('ui.welcome_background_image', '/images/bg-login.png');
+    $welcomeBackgroundPosition = config('ui.welcome_background_position', 'center center');
     $welcomeBackgroundSize = config('ui.welcome_background_size', 'cover');
 
     if ($welcomeBackgroundImage && ! str_starts_with($welcomeBackgroundImage, 'http://') && ! str_starts_with($welcomeBackgroundImage, 'https://') && ! str_starts_with($welcomeBackgroundImage, 'data:') && ! str_starts_with($welcomeBackgroundImage, '/')) {
         $welcomeBackgroundImage = asset(ltrim($welcomeBackgroundImage, '/'));
     }
 @endphp
-<body class="relative min-h-screen bg-neutral-200 bg-no-repeat" style="background-image: url('{{ $welcomeBackgroundImage }}'); background-position: {{ $welcomeBackgroundPosition }}; background-size: {{ $welcomeBackgroundSize }};">
-    <div class="absolute inset-0 bg-black/60 backdrop-blur-[2px]"></div>
-    <div class="relative z-10 mx-auto flex min-h-screen w-full max-w-[1600px] flex-col items-center justify-center px-3 py-3 sm:px-4 md:px-6 md:py-6 text-center">
-        <h1 class="mb-4 text-[1.85rem] font-bold leading-tight tracking-wide text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] sm:text-2xl md:mb-8 md:text-5xl">SELAMAT DATANG DI PROGRAM</h1>
+<body class="relative min-h-screen overflow-x-hidden bg-slate-950 bg-no-repeat text-white" style="font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif; background-image: url('{{ $welcomeBackgroundImage }}'); background-position: {{ $welcomeBackgroundPosition }}; background-size: {{ $welcomeBackgroundSize }};">
+    <div class="fixed inset-0 bg-slate-950/86"></div>
+    <div class="pointer-events-none fixed inset-0 bg-linear-to-b from-cyan-300/8 via-transparent to-blue-500/8"></div>
+    <div class="pointer-events-none fixed -top-28 -right-24 h-72 w-72 rounded-full bg-cyan-300/20 blur-3xl"></div>
+    <div class="pointer-events-none fixed -bottom-28 -left-20 h-72 w-72 rounded-full bg-blue-500/20 blur-3xl"></div>
 
-        <div class="mb-4 grid w-full grid-cols-[6.5rem_minmax(0,1fr)_6.5rem] items-center gap-0 sm:grid-cols-[7rem_minmax(0,1fr)_7rem] sm:gap-1 md:mb-8 md:grid-cols-[1fr_auto_1fr] md:gap-4">
-            <div class="h-[6.5rem] w-[6.5rem] justify-self-end sm:h-[7rem] sm:w-[7rem] md:h-64 md:w-64 lg:h-72 lg:w-72">
-                <img src="{{ asset('images/logo-bgn.png') }}" alt="Badan Gizi Nasional" class="h-full w-full object-contain">
+    <main class="relative z-10 mx-auto flex min-h-dvh w-full max-w-5xl items-center px-4 py-8 sm:px-6 sm:py-10">
+        <section class="w-full rounded-3xl border border-white/20 bg-slate-900/55 p-5 shadow-2xl backdrop-blur-md sm:p-7 lg:p-9">
+            <div class="grid grid-cols-2 gap-3 sm:gap-4">
+                <div class="rounded-2xl border border-white/25 bg-white p-3 shadow-md sm:p-4">
+                    <img src="{{ asset('images/logo-bgn.png') }}" alt="Logo BGN" class="mx-auto h-24 w-auto object-contain sm:h-28 lg:h-32">
+                </div>
+                <div class="rounded-2xl border border-white/25 bg-white p-3 shadow-md sm:p-4">
+                    <img src="{{ asset('images/logo-smp.png') }}" alt="Logo Satria Merah Putih" class="mx-auto h-24 w-auto object-contain sm:h-28 lg:h-32">
+                </div>
             </div>
 
-            <div class="px-1 md:justify-self-center">
-                <p class="text-[clamp(1.15rem,5.2vw,1.9rem)] font-bold leading-tight tracking-wide text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] md:text-6xl">SATUAN PELAYANAN</p>
-                <p class="mt-1 text-[clamp(1.15rem,5.2vw,1.9rem)] font-bold leading-tight tracking-wide text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] md:mt-2 md:text-6xl">PEMENUHAN GIZI</p>
-                <p class="mt-2 text-[0.72rem] font-semibold tracking-[0.18em] text-white/90 drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] sm:text-xs md:mt-5 md:text-xl">
-                    YAYASAN SATRIA MERAH PUTIH
+            <p class="mt-3 text-center text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-100 sm:text-[11px]">
+                Sinergi Program BGN dan Yayasan Satria Merah Putih
+            </p>
+
+            <div class="mx-auto mt-7 max-w-3xl text-center">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-200">Enterprise Procurement Platform</p>
+                <h1 class="mt-2 text-3xl font-extrabold leading-tight text-white sm:text-4xl lg:text-5xl">
+                    C-Procurement
+                    <span class="block text-cyan-200">Yayasan Satria Merah Putih</span>
+                </h1>
+                <p class="mx-auto mt-4 max-w-2xl text-sm text-slate-200 sm:text-base">
+                    Platform pengadaan terintegrasi untuk mengelola purchase request, purchase order, distribusi barang, invoice, hingga settlement vendor secara akurat dan terstruktur.
                 </p>
             </div>
 
-            <div class="h-[6.5rem] w-[6.5rem] justify-self-start sm:h-[7rem] sm:w-[7rem] md:h-64 md:w-64 lg:h-72 lg:w-72">
-                <img src="{{ asset('images/logo-smp.png') }}" alt="Satria Merah Putih" class="h-full w-full object-contain">
+            <div class="mx-auto mt-6 grid max-w-3xl grid-cols-1 gap-2.5 sm:grid-cols-3">
+                <div class="rounded-xl border border-white/15 bg-white/10 px-3 py-2.5 text-center text-xs text-slate-100">Workflow PR sampai Payment</div>
+                <div class="rounded-xl border border-white/15 bg-white/10 px-3 py-2.5 text-center text-xs text-slate-100">Approval Berbasis Role</div>
+                <div class="rounded-xl border border-white/15 bg-white/10 px-3 py-2.5 text-center text-xs text-slate-100">Settlement dan Ledger Transparan</div>
             </div>
-        </div>
 
-        <a href="{{ route('login') }}"
-           class="mb-4 inline-flex rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 px-7 py-2 text-base font-medium tracking-wide text-white shadow-lg transition hover:from-blue-600 hover:to-indigo-600 sm:px-8 sm:text-lg md:mb-8 md:px-12 md:py-3 md:text-3xl">
-            SELANJUTNYA
-        </a>
+            <div class="mx-auto mt-6 max-w-md">
+                <a href="{{ route('login') }}" class="block rounded-xl bg-white px-5 py-3 text-center text-sm font-semibold text-slate-900 transition hover:bg-slate-100">Masuk ke Aplikasi</a>
+            </div>
 
-        <p class="text-sm text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] sm:text-base md:text-2xl">version.0.1.0.0</p>
-    </div>
+            <p class="mt-6 text-center text-[11px] text-slate-300">Version 0.1.0.1</p>
+        </section>
+    </main>
 </body>
 </html>

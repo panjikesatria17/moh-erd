@@ -48,6 +48,8 @@ $allFiles = Get-ChildItem -Path $projectRoot -Recurse -File -Force |
         $full = $_.FullName
 
         if ($_.Name -eq ".env") { return $false }
+        if ($_.Name -eq "hot" -and $_.DirectoryName -eq (Join-Path $projectRoot "public")) { return $false }
+        if ($_.Name.EndsWith('.hot')) { return $false }
         if ($_.Extension -eq ".zip") { return $false }
 
         foreach ($prefix in $excludePrefix) {

@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
@@ -6,6 +6,255 @@
 @source '../**/*.js';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans:
+        "Instrument Sans", ui-sans-serif, system-ui, sans-serif,
+        "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+        "Noto Color Emoji";
+}
+/* Fade In */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.animate-fadeIn {
+    animation: fadeIn 1.5s ease-in-out;
+}
+
+/* Slide Down */
+@keyframes slideDown {
+    from {
+        transform: translateY(-30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.animate-slideDown {
+    animation: slideDown 1s ease-out;
+}
+
+/* Glow Logo */
+.glow-logo {
+    filter: drop-shadow(0 0 10px rgba(34, 197, 94, 0.6));
+}
+
+/* Lantern */
+.lantern {
+    position: absolute;
+    width: 40px;
+    height: 60px;
+    background: radial-gradient(circle, #facc15, #f59e0b);
+    border-radius: 50%;
+    bottom: -80px;
+    left: 20%;
+    animation: floatUp 10s linear infinite;
+    opacity: 0.5;
+}
+
+.lantern.delay-1 {
+    left: 50%;
+    animation-delay: 3s;
+}
+.lantern.delay-2 {
+    left: 80%;
+    animation-delay: 6s;
+}
+
+@keyframes floatUp {
+    0% {
+        transform: translateY(0);
+        opacity: 0;
+    }
+    50% {
+        opacity: 0.6;
+    }
+    100% {
+        transform: translateY(-120vh);
+        opacity: 0;
+    }
+}
+
+/* Sparkle */
+.sparkle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: #fff;
+    border-radius: 50%;
+    top: 20%;
+    left: 30%;
+    animation: sparkle 3s infinite;
+}
+
+.sparkle.delay-1 {
+    top: 50%;
+    left: 60%;
+    animation-delay: 1s;
+}
+.sparkle.delay-2 {
+    top: 70%;
+    left: 40%;
+    animation-delay: 2s;
+}
+
+@keyframes sparkle {
+    0%,
+    100% {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.5);
+    }
+}
+
+/* Button Pulse */
+@keyframes pulseSlow {
+    0%,
+    100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+.animate-pulseSlow {
+    animation: pulseSlow 3s infinite;
+}
+
+/* Reliable CTA fallback for Firefox/mobile */
+.welcome-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    background-color: #16a34a;
+    background-image: linear-gradient(90deg, #22c55e 0%, #059669 100%);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    box-shadow: 0 10px 24px rgba(6, 95, 70, 0.42);
+}
+
+.welcome-cta:hover {
+    background-color: #15803d;
+    background-image: linear-gradient(90deg, #16a34a 0%, #047857 100%);
+}
+
+/* Moon */
+.moon {
+    position: absolute;
+    top: 10%;
+    right: 10%;
+    width: 120px;
+    height: 120px;
+    background: radial-gradient(circle, #facc15, #eab308);
+    border-radius: 50%;
+    box-shadow: 0 0 60px rgba(250, 204, 21, 0.6);
+    animation: moonFloat 6s ease-in-out infinite;
+    z-index: 1;
+}
+
+/* efek sabit */
+.moon::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 25px;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    border-radius: 50%;
+}
+
+/* animasi naik turun */
+@keyframes moonFloat {
+    0%,
+    100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-20px);
+    }
+}
+
+/* Mobile-first performance tuning for decorative effects */
+@media (max-width: 640px) {
+    .welcome-glass {
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+        background: rgba(0, 0, 0, 0.38);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .lantern,
+    .sparkle {
+        display: none;
+    }
+
+    .moon {
+        top: 6%;
+        right: 5%;
+        width: 74px;
+        height: 74px;
+        box-shadow: 0 0 22px rgba(250, 204, 21, 0.45);
+        animation-duration: 9s;
+    }
+
+    .moon::after {
+        left: 15px;
+    }
+
+    .glow-logo {
+        filter: drop-shadow(0 0 6px rgba(34, 197, 94, 0.45));
+    }
+
+    .animate-pulseSlow {
+        animation: none;
+    }
+
+    .animate-fadeIn,
+    .animate-slideDown {
+        animation-duration: 0.6s;
+    }
+}
+
+/* Extra tuning for very small phones */
+@media (max-width: 380px) {
+    .moon {
+        display: none;
+    }
+
+    .welcome-glass {
+        border-radius: 1rem;
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.28);
+    }
+
+    .glow-logo {
+        filter: none;
+    }
+}
+
+/* Respect user accessibility settings */
+@media (prefers-reduced-motion: reduce) {
+    .lantern,
+    .sparkle,
+    .moon,
+    .animate-fadeIn,
+    .animate-slideDown,
+    .animate-pulseSlow {
+        animation: none !important;
+    }
+
+    .moon {
+        transform: none !important;
+    }
 }

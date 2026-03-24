@@ -57,6 +57,8 @@ EXCLUDES=(
   "storage/framework/testing/*"
   "storage/framework/views/*"
   "storage/app/private/*"
+  "public/hot"
+  "public/*.hot"
   ".env"
   "*.zip"
 )

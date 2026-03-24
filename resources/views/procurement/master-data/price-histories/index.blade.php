@@ -4,32 +4,38 @@
 
 @section('content')
     @php
-        $canManageMasterWrites = in_array(auth()->user()?->role?->value, [
+        $authRole = auth()->user()?->role;
+        $currentRoleRaw = is_object($authRole) ? ($authRole->value ?? null) : $authRole;
+        $canManageMasterWrites = in_array($currentRoleRaw, [
             \App\Enums\UserRole::SUPER_ADMIN->value,
             \App\Enums\UserRole::PURCHASING->value,
             \App\Enums\UserRole::ADMIN->value,
             \App\Enums\UserRole::OWNER->value,
+            'super_admin',
+            'purchasing',
+            'admin',
+            'owner',
         ], true);
         $formatMoneyInput = static fn ($value) => $value === null || $value === ''
             ? ''
             : rtrim(rtrim(number_format((float) $value, 2, ',', '.'), '0'), ',');
     @endphp
 
-    <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <div>
-            <h2 class="text-xl font-semibold">Master Data - Price History</h2>
-            <p class="text-sm text-gray-500">Kelola riwayat harga produk per vendor untuk referensi pembelian.</p>
-        </div>
-    </div>
+    <x-ui.hero
+        class="mb-4"
+        eyebrow="Master Data"
+        title="Master Data - Price History"
+        description="Kelola riwayat harga produk per vendor untuk referensi pembelian."
+    />
 
     @if($canManageMasterWrites)
-    <form method="POST" action="{{ $editPriceHistory ? route('ui.master-data.price-histories.update', $editPriceHistory) : route('ui.master-data.price-histories.store') }}" class="mb-5 rounded-xl border border-gray-200 bg-white p-4">
+    <x-ui.panel class="mb-5" :title="$editPriceHistory ? 'Edit Riwayat Harga' : 'Tambah Riwayat Harga'">
+    <form method="POST" action="{{ $editPriceHistory ? route('ui.master-data.price-histories.update', $editPriceHistory) : route('ui.master-data.price-histories.store') }}" class="">
         @csrf
         @if($editPriceHistory)
             @method('PUT')
         @endif
         <div class="mb-3 flex items-center justify-between gap-2">
-            <h3 class="text-sm font-semibold text-gray-700">{{ $editPriceHistory ? 'Edit Riwayat Harga' : 'Tambah Riwayat Harga' }}</h3>
             @if($editPriceHistory)
                 <a href="{{ route('ui.master-data.price-histories.index') }}" class="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Batal Edit</a>
             @endif
@@ -88,9 +94,10 @@
             <button type="submit" class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">{{ $editPriceHistory ? 'Update Harga' : 'Simpan Harga' }}</button>
         </div>
     </form>
+    </x-ui.panel>
     @endif
 
-    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+    <x-ui.panel title="Daftar Riwayat Harga" subtitle="Histori harga produk per vendor" bodyClass="p-0">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
@@ -151,7 +158,7 @@
                 </tbody>
             </table>
         </div>
-    </div>
+    </x-ui.panel>
 
     <div class="mt-4">
         {{ $priceHistories->links() }}

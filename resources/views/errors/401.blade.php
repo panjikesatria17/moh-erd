@@ -5,22 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>401 - Belum Login</title>
     <link rel="icon" type="image/png" href="{{ asset('images/smp-logo.png') }}">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    </style>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="min-h-screen bg-gray-100 text-gray-900">
-    <main class="mx-auto flex min-h-screen max-w-2xl items-center px-6 py-10">
-        <section class="w-full rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-            <p class="text-sm font-semibold uppercase tracking-wide text-blue-600">401 Unauthorized</p>
-            <h1 class="mt-2 text-2xl font-bold md:text-3xl">Sesi belum terautentikasi</h1>
-            <p class="mx-auto mt-3 max-w-xl text-sm text-gray-600 md:text-base">
-                Anda perlu login terlebih dahulu untuk mengakses halaman ini.
+<body class="relative min-h-screen bg-slate-950 text-slate-900" style="font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;">
+    <div class="pointer-events-none absolute inset-0 bg-linear-to-br from-slate-950 via-slate-900 to-sky-900"></div>
+    <div class="pointer-events-none absolute -top-24 -right-20 h-72 w-72 rounded-full bg-cyan-300/20 blur-3xl"></div>
+    <div class="pointer-events-none absolute -bottom-32 -left-24 h-72 w-72 rounded-full bg-blue-500/20 blur-3xl"></div>
+
+    <main class="relative z-10 mx-auto flex min-h-screen w-full max-w-3xl items-center px-4 py-6 sm:px-6 sm:py-10">
+        <section class="w-full rounded-3xl border border-white/15 bg-white/95 p-5 text-center shadow-2xl sm:p-8">
+            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-sky-700">401 Unauthorized</p>
+            <h1 class="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">Sesi Belum Terautentikasi</h1>
+            <p class="mx-auto mt-3 max-w-xl text-sm text-slate-600 sm:text-base">
+                Anda perlu login terlebih dahulu untuk mengakses modul procurement dan melanjutkan aktivitas operasional.
             </p>
 
-            <div class="mt-6 flex flex-wrap justify-center gap-3">
-                <a href="{{ route('login') }}" class="rounded-md bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700">
+            <div class="mt-6 flex flex-col gap-2.5 sm:flex-row sm:justify-center">
+                <a href="{{ route('login') }}" class="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700">
                     Ke Halaman Login
                 </a>
-                <a href="{{ url('/') }}" class="rounded-md border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100">
+                <a href="{{ url('/') }}" class="rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
                     Kembali ke Beranda
                 </a>
             </div>

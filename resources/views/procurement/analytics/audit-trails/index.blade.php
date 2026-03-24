@@ -3,9 +3,12 @@
 @section('title', 'Audit Trail')
 
 @section('content')
-    <div class="mb-4">
-        <h2 class="text-xl font-semibold">Audit Trail</h2>
-        <p class="text-sm text-gray-500">Jejak aktivitas perubahan data untuk kebutuhan compliance.</p>
+    <x-ui.hero
+        class="mb-4"
+        eyebrow="Analytics & Compliance"
+        title="Audit Trail"
+        description="Jejak aktivitas perubahan data untuk kebutuhan compliance."
+    >
         <form method="GET" action="{{ route('ui.audit-trails.index') }}" class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-5">
             <select name="event" class="rounded-md border border-gray-300 px-3 py-2 text-sm">
                 <option value="">Semua Event</option>
@@ -29,9 +32,9 @@
                 <a href="{{ route('ui.audit-trails.index') }}" class="rounded-md border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50">Reset</a>
             </div>
         </form>
-    </div>
+    </x-ui.hero>
 
-    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+    <x-ui.panel title="Daftar Audit Trail" subtitle="Riwayat aktivitas perubahan data" bodyClass="p-0">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
@@ -60,7 +63,7 @@
                 </tbody>
             </table>
         </div>
-    </div>
+    </x-ui.panel>
 
     <div class="mt-4">{{ $auditTrails->links() }}</div>
 @endsection

@@ -9,12 +9,15 @@
 </head>
 <body @class([
     'text-gray-900',
-    'bg-gray-50' => ! request()->routeIs('ui.dashboard'),
-    'relative bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100 bg-fixed' => request()->routeIs('ui.dashboard'),
+    'bg-gray-50' => ! request()->routeIs('ui.dashboard', 'ui.vendor.portal'),
+    'relative bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100 bg-fixed' => request()->routeIs('ui.dashboard', 'ui.vendor.portal'),
 ])
 >
     @php
-        $currentRoleValue = auth()->user()?->role?->value;
+        $rawRole = auth()->user()?->role;
+        $currentRoleValue = $rawRole instanceof \App\Enums\UserRole
+            ? $rawRole->value
+            : (string) ($rawRole ?? '');
         $currentUser = auth()->user();
         $roleLabels = \App\Enums\UserRole::labels();
         $currentRoleLabel = $roleLabels[$currentRoleValue] ?? 'Pengguna';
@@ -46,7 +49,7 @@
     <div @class([
         'min-h-screen',
         'flex flex-col',
-        'relative z-10' => request()->routeIs('ui.dashboard'),
+        'relative z-10' => request()->routeIs('ui.dashboard', 'ui.vendor.portal'),
     ])>
         <header class="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur">
             <div class="mx-auto flex max-w-screen-2xl items-center justify-between px-6 py-4">
@@ -79,7 +82,7 @@
                                             $payload = is_array($notification->data ?? null) ? $notification->data : [];
                                             $title = $payload['title'] ?? 'Notifikasi';
                                             $message = $payload['message'] ?? '-';
-                                            $url = $payload['url'] ?? route('ui.dashboard');
+                                            $url = route('ui.notifications.open', $notification->id);
                                         @endphp
                                         <a href="{{ $url }}" class="block rounded-md border px-2.5 py-2 text-xs {{ $notification->read_at ? 'border-slate-200 bg-white text-slate-600' : 'border-blue-200 bg-blue-50 text-slate-800' }}">
                                             <p class="font-semibold">{{ $title }}</p>
@@ -161,6 +164,16 @@
                             \App\Enums\UserRole::OWNER->value,
                             \App\Enums\UserRole::FINANCE->value,
                         ]);
+                        $canVendorSettlement = $hasRole([
+                            \App\Enums\UserRole::SUPER_ADMIN->value,
+                            \App\Enums\UserRole::OWNER->value,
+                            \App\Enums\UserRole::FINANCE->value,
+                        ]);
+                        $canProfitLoss = $hasRole([
+                            \App\Enums\UserRole::SUPER_ADMIN->value,
+                            \App\Enums\UserRole::OWNER->value,
+                            \App\Enums\UserRole::FINANCE->value,
+                        ]);
                         $canPayments = $hasRole([
                             \App\Enums\UserRole::SUPER_ADMIN->value,
                             \App\Enums\UserRole::OWNER->value,
@@ -171,6 +184,9 @@
                             \App\Enums\UserRole::SUPER_ADMIN->value,
                             \App\Enums\UserRole::OWNER->value,
                             \App\Enums\UserRole::PURCHASING->value,
+                        ]);
+                        $canVendorPortal = $hasRole([
+                            \App\Enums\UserRole::VENDOR_ADMIN->value,
                         ]);
                         $canUsersRoles = $currentRoleValue === \App\Enums\UserRole::SUPER_ADMIN->value;
                         $canProgramControl = $currentRoleValue === \App\Enums\UserRole::SUPER_ADMIN->value;
@@ -197,6 +213,9 @@
                     <div class="mb-4">
                         <p class="{{ $sidebarSectionLabelClass }}">Overview</p>
                         <a href="{{ route('ui.dashboard') }}" class="mb-1 block rounded-md px-3 py-2 text-sm font-medium hover:bg-gray-100 {{ request()->routeIs('ui.dashboard') ? 'bg-gray-100 text-blue-700' : 'text-gray-700' }}">Dashboard</a>
+                        @if($canVendorPortal)
+                            <a href="{{ route('ui.vendor.portal') }}" class="mb-1 block rounded-md px-3 py-2 text-sm font-medium hover:bg-gray-100 {{ request()->routeIs('ui.vendor.*') ? 'bg-gray-100 text-blue-700' : 'text-gray-700' }}">Portal Vendor</a>
+                        @endif
                     </div>
 
                     @if($canPurchaseRequest || $canPurchaseOrder || $canApproval)
@@ -232,7 +251,7 @@
                         </div>
                     @endif
 
-                    @if($canInvoices || $canKwitansi || $canBillingCycles || $canPurchaseFunding || $canPayments)
+                    @if($canInvoices || $canKwitansi || $canBillingCycles || $canPurchaseFunding || $canProfitLoss || $canVendorSettlement || $canPayments)
                         <div class="mb-4">
                             <p class="{{ $sidebarSectionLabelClass }}">Finance & Billing</p>
                             @if($canInvoices)
@@ -246,6 +265,12 @@
                             @endif
                             @if($canPurchaseFunding)
                                 <a href="{{ route('ui.purchase-funding-requests.index') }}" class="mb-1 block rounded-md px-3 py-2 text-sm font-medium hover:bg-gray-100 {{ request()->routeIs('ui.purchase-funding-requests.*') ? 'bg-gray-100 text-blue-700' : 'text-gray-700' }}">Pengajuan Dana Pembelian</a>
+                            @endif
+                            @if($canProfitLoss)
+                                <a href="{{ route('ui.profit-loss.index') }}" class="mb-1 block rounded-md px-3 py-2 text-sm font-medium hover:bg-gray-100 {{ request()->routeIs('ui.profit-loss.*') ? 'bg-gray-100 text-blue-700' : 'text-gray-700' }}">Laporan Laba Rugi</a>
+                            @endif
+                            @if($canVendorSettlement)
+                                <a href="{{ route('ui.finance.vendor-margin-payments.index') }}" class="mb-1 block rounded-md px-3 py-2 text-sm font-medium hover:bg-gray-100 {{ request()->routeIs('ui.finance.vendor-margin-payments.*') ? 'bg-gray-100 text-blue-700' : 'text-gray-700' }}">Settlement Vendor-Yayasan</a>
                             @endif
                             @if($canPayments)
                                 <a href="{{ route('ui.payments.index') }}" class="mb-1 block rounded-md px-3 py-2 text-sm font-medium hover:bg-gray-100 {{ request()->routeIs('ui.payments.*') ? 'bg-gray-100 text-blue-700' : 'text-gray-700' }}">Payments</a>

@@ -9,6 +9,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property int $purchase_order_id
+ * @property int $product_id
+ * @property string $quantity
+ * @property string $unit_price
+ * @property string $subtotal
+ * @property ?string $notes
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property \Illuminate\Support\Carbon $updated_at
+ * @property ?\Illuminate\Support\Carbon $deleted_at
+ */
 class PurchaseOrderItem extends Model
 {
     use HasFactory, SoftDeletes;

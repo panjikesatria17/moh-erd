@@ -139,3 +139,27 @@ Catatan:
 - Arahkan web root ke folder `current/public`.
 - Permission yang direkomendasikan: file `644`, folder `755`, dan `storage` + `bootstrap/cache` `775`.
 - Jika `composer` sudah dijalankan di pipeline CI, saat deploy bisa pakai `--skip-composer`.
+
+## Fix Permission Setelah Extract Manual di Hosting
+
+Jika upload ZIP lalu extract manual dan muncul error permission (mis. `storage/logs` atau `bootstrap/cache` tidak writable), jalankan:
+
+```bash
+bash scripts/fix-permissions.sh --path /path/ke/folder-laravel
+```
+
+Jika server punya akses sudo/chown untuk user web server:
+
+```bash
+bash scripts/fix-permissions.sh --path /path/ke/folder-laravel --web-user www-data --web-group www-data
+```
+
+Untuk deploy no-downtime, sekarang bisa set juga saat deploy:
+
+```bash
+bash scripts/deploy-no-downtime.sh \
+	--archive /path/deploy.zip \
+	--app-root /path/apps/c-procurement \
+	--web-user www-data \
+	--web-group www-data
+```

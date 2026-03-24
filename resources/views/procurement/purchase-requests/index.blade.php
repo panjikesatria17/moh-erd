@@ -4,7 +4,8 @@
 
 @section('content')
     @php
-        $currentRoleRaw = auth()->user()?->role?->value;
+        $authRole = auth()->user()?->role;
+        $currentRoleRaw = is_object($authRole) ? ($authRole->value ?? null) : $authRole;
         $currentRole = in_array($currentRoleRaw, ['admin', 'owner'], true) ? 'super_admin' : $currentRoleRaw;
         $canCreatePurchaseRequest = in_array($currentRole, ['super_admin', 'sppg_user'], true);
         $canApprovePurchaseRequest = in_array($currentRole, ['super_admin', 'owner'], true);
@@ -19,18 +20,18 @@
             ->values();
     @endphp
 
-    <div class="mb-4 flex items-center justify-between">
-        <div>
-            <h2 class="text-xl font-semibold">Purchase Requests</h2>
-            <p class="text-sm text-gray-500">Daftar permintaan pembelian dari seluruh SPPG.</p>
-        </div>
-    </div>
+    <x-ui.hero
+        class="mb-4"
+        eyebrow="Procurement Workflow"
+        title="Purchase Requests"
+        description="Daftar permintaan pembelian dari seluruh SPPG."
+    />
 
     @if($canCreatePurchaseRequest)
-    <form id="purchase-request-form" method="POST" action="{{ route('ui.purchase-requests.store') }}" class="mb-5 rounded-xl border border-gray-200 bg-white p-4">
+    <x-ui.panel class="mb-5" title="Create Purchase Request (Quick Form)">
+    <form id="purchase-request-form" method="POST" action="{{ route('ui.purchase-requests.store') }}" class="">
         @csrf
         <input type="hidden" id="is_product_review_confirmed" name="is_product_review_confirmed" value="0">
-        <h3 class="mb-3 text-sm font-semibold text-gray-700">Create Purchase Request (Quick Form)</h3>
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
             <div>
                 <label class="mb-1 block text-xs font-medium text-gray-600">SPPG</label>
@@ -150,6 +151,7 @@
             <button id="create-pr-submit" type="submit" class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-400" disabled>Create PR</button>
         </div>
     </form>
+    </x-ui.panel>
     @endif
 
     @php
@@ -1097,7 +1099,7 @@
         })();
     </script>
 
-    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+    <x-ui.panel title="Daftar Purchase Request" subtitle="Monitoring status PR dan aksi lanjutan" bodyClass="p-0">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
@@ -1160,16 +1162,23 @@
                             </td>
                             <td class="px-4 py-3">{{ optional($pr->request_date)->format('d M Y') }}</td>
                             <td class="px-4 py-3">
-                                <span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium">{{ $pr->status?->value }}</span>
+                                <x-ui.status-pill
+                                    :value="$pr->status?->value ?? '-'"
+                                    :classes="[
+                                        'submitted' => 'bg-amber-100 text-amber-700',
+                                        'approved' => 'bg-emerald-100 text-emerald-700',
+                                        'rejected' => 'bg-rose-100 text-rose-700',
+                                    ]"
+                                />
                             </td>
                             <td class="px-4 py-3 text-right">@rupiah($pr->total_amount)</td>
                             <td class="px-4 py-3">
                                 <div class="flex justify-end gap-2">
-                                    <a href="{{ route('ui.purchase-requests.download', $pr) }}" title="Cetak PR" aria-label="Cetak PR" class="inline-flex items-center justify-center rounded-md border border-blue-300 p-1.5 text-blue-700 hover:bg-blue-50">
+                                    <x-ui.action-link href="{{ route('ui.purchase-requests.download', $pr) }}" title="Cetak PR" aria-label="Cetak PR" variant="blue-outline" size="icon">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4">
                                             <path d="M6 9V3h12v6h-2V5H8v4H6zm10 4h2a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h2v6h8v-6zm-6 4v-4h4v4h-4z"/>
                                         </svg>
-                                    </a>
+                                    </x-ui.action-link>
 
                                     @if($canApprovePurchaseRequest && $pr->status?->value === 'submitted')
                                         <form method="POST" action="{{ route('ui.purchase-requests.approve', $pr) }}">
@@ -1195,7 +1204,7 @@
                 </tbody>
             </table>
         </div>
-    </div>
+    </x-ui.panel>
 
     <div class="mt-4">
         {{ $purchaseRequests->links() }}

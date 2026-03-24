@@ -12,6 +12,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property int $sppg_id
+ * @property \Illuminate\Support\Carbon $week_start_date
+ * @property \Illuminate\Support\Carbon $week_end_date
+ * @property DocumentStatus $status
+ * @property int $created_by
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property \Illuminate\Support\Carbon $updated_at
+ * @property ?\Illuminate\Support\Carbon $deleted_at
+ */
 class BillingCycle extends Model
 {
     use HasFactory, SoftDeletes;

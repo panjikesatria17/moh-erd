@@ -3,12 +3,15 @@
 @section('title', 'Price Trends')
 
 @section('content')
-    <div class="mb-4">
-        <h2 class="text-xl font-semibold">Price Trend Analysis</h2>
-        <p class="text-sm text-gray-500">Analisis pergerakan harga produk berdasarkan histori harga pada periode tertentu.</p>
-    </div>
+    <x-ui.hero
+        class="mb-4"
+        eyebrow="Analytics & Compliance"
+        title="Price Trend Analysis"
+        description="Analisis pergerakan harga produk berdasarkan histori harga pada periode tertentu."
+    />
 
-    <form method="GET" action="{{ route('ui.price-trends.index') }}" class="mb-4 rounded-xl border border-gray-200 bg-white p-3">
+    <x-ui.panel class="mb-4" title="Filter Price Trend">
+    <form method="GET" action="{{ route('ui.price-trends.index') }}" class="">
         <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-5">
             <select name="product_id" class="rounded-md border border-gray-300 px-3 py-2 text-sm">
                 <option value="">Semua Produk</option>
@@ -30,31 +33,17 @@
             </div>
         </div>
     </form>
+    </x-ui.panel>
 
     <div class="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-5">
-        <div class="rounded-xl border border-gray-200 bg-white p-4">
-            <p class="text-xs uppercase text-gray-500">Produk</p>
-            <p class="mt-1 text-xl font-semibold text-gray-900">{{ $summary['total_products'] ?? 0 }}</p>
-        </div>
-        <div class="rounded-xl border border-gray-200 bg-white p-4">
-            <p class="text-xs uppercase text-gray-500">Total Record</p>
-            <p class="mt-1 text-xl font-semibold text-gray-900">{{ $summary['total_records'] ?? 0 }}</p>
-        </div>
-        <div class="rounded-xl border border-gray-200 bg-white p-4">
-            <p class="text-xs uppercase text-gray-500">Avg Trend</p>
-            <p class="mt-1 text-xl font-semibold text-indigo-700">{{ number_format((float) ($summary['avg_trend_percent'] ?? 0), 2, ',', '.') }}%</p>
-        </div>
-        <div class="rounded-xl border border-gray-200 bg-white p-4">
-            <p class="text-xs uppercase text-gray-500">Produk Naik</p>
-            <p class="mt-1 text-xl font-semibold text-emerald-700">{{ $summary['products_up'] ?? 0 }}</p>
-        </div>
-        <div class="rounded-xl border border-gray-200 bg-white p-4">
-            <p class="text-xs uppercase text-gray-500">Produk Turun</p>
-            <p class="mt-1 text-xl font-semibold text-rose-700">{{ $summary['products_down'] ?? 0 }}</p>
-        </div>
+        <x-ui.stat-card label="Produk" value="{{ $summary['total_products'] ?? 0 }}" />
+        <x-ui.stat-card label="Total Record" value="{{ $summary['total_records'] ?? 0 }}" />
+        <x-ui.stat-card label="Avg Trend" value="{{ number_format((float) ($summary['avg_trend_percent'] ?? 0), 2, ',', '.') }}%" class="border-indigo-200 bg-indigo-50" />
+        <x-ui.stat-card label="Produk Naik" value="{{ $summary['products_up'] ?? 0 }}" class="border-emerald-200 bg-emerald-50" />
+        <x-ui.stat-card label="Produk Turun" value="{{ $summary['products_down'] ?? 0 }}" class="border-rose-200 bg-rose-50" />
     </div>
 
-    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+    <x-ui.panel title="Trend Harga Produk" subtitle="Ringkasan min/max/avg dan volatilitas harga" bodyClass="p-0">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
@@ -103,7 +92,7 @@
                 </tbody>
             </table>
         </div>
-    </div>
+    </x-ui.panel>
 
     <div class="mt-4">{{ $trendRows->links() }}</div>
 @endsection

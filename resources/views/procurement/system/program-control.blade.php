@@ -13,18 +13,26 @@
         $effectiveDeadline = $programControlState['effective_deadline'] ?? null;
     @endphp
 
-    <div class="mb-4">
-        <h2 class="text-xl font-semibold">Kontrol Program Global</h2>
-        <p class="text-sm text-gray-500">Jika program dinonaktifkan, semua role selain super admin tidak dapat menggunakan sistem.</p>
-    </div>
+    <x-ui.hero
+        class="mb-4"
+        eyebrow="System Control"
+        title="Kontrol Program Global"
+        description="Jika program dinonaktifkan, semua role selain super admin tidak dapat menggunakan sistem."
+    />
 
-    <div class="rounded-xl border border-gray-200 bg-white p-4">
+    <x-ui.panel title="Pengaturan Program" subtitle="Kontrol status global ON/OFF sistem">
         <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
                 <p class="text-sm text-gray-500">Status Efektif Saat Ini</p>
-                <p class="mt-1 text-lg font-semibold {{ $effectiveEnabled ? 'text-emerald-700' : 'text-rose-700' }}">
-                    {{ $effectiveEnabled ? 'PROGRAM AKTIF (ON)' : 'PROGRAM NONAKTIF (OFF)' }}
-                </p>
+                <div class="mt-1">
+                    <x-ui.status-pill
+                        :value="$effectiveEnabled ? 'program aktif (on)' : 'program nonaktif (off)'"
+                        :classes="[
+                            'program aktif (on)' => 'bg-emerald-100 text-emerald-700',
+                            'program nonaktif (off)' => 'bg-rose-100 text-rose-700',
+                        ]"
+                    />
+                </div>
                 <p class="mt-1 text-xs text-gray-500">Alasan status: {{ str($effectiveReason)->replace('_', ' ')->title() }}</p>
                 @if($effectiveDeadline)
                     <p class="mt-1 text-xs text-gray-500">Deadline lisensi + grace: {{ $effectiveDeadline->format('d M Y H:i') }}</p>
@@ -88,5 +96,5 @@
         <div class="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
             Gunakan mode ini untuk kontrol aktivasi sistem lintas yayasan. Untuk demo/marketing biasanya gunakan mode <strong>read-only</strong>, untuk lock total gunakan <strong>hard lock</strong>.
         </div>
-    </div>
+    </x-ui.panel>
 @endsection

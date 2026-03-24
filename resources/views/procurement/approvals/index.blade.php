@@ -4,33 +4,39 @@
 
 @section('content')
     @php
+        $authRole = auth()->user()?->role;
+        $currentRoleRaw = is_object($authRole) ? ($authRole->value ?? null) : $authRole;
         $formatMoneyInput = static fn ($value) => $value === null || $value === ''
             ? ''
             : rtrim(rtrim(number_format((float) $value, 2, ',', '.'), '0'), ',');
     @endphp
 
-    <div class="mb-4">
-        <h2 class="text-xl font-semibold">Approval Queue</h2>
-        <p class="text-sm text-gray-500">Daftar antrian approval dokumen procurement lintas modul.</p>
+    <x-ui.hero
+        class="mb-4"
+        eyebrow="Procurement Workflow"
+        title="Approval Queue"
+        description="Daftar antrian approval dokumen procurement lintas modul."
+    >
 
-        @if(in_array(auth()->user()?->role?->value, [\App\Enums\UserRole::SUPER_ADMIN->value, \App\Enums\UserRole::ADMIN->value, \App\Enums\UserRole::OWNER->value], true))
-        <form method="POST" action="{{ route('ui.approvals.settings.po-threshold.update') }}" class="mt-3 flex flex-wrap items-end gap-2 rounded-lg border border-gray-200 bg-white p-3">
-            @csrf
-            <div class="w-full sm:w-auto">
-                <label class="mb-1 block text-xs font-medium text-gray-600">Threshold Approval Owner untuk PO</label>
-                <input
-                    type="text"
-                    inputmode="decimal"
-                    name="po_owner_approval_threshold"
-                    value="{{ $formatMoneyInput(old('po_owner_approval_threshold', (float) ($poOwnerApprovalThreshold ?? 5000000))) }}"
-                    class="js-idr-input w-full sm:w-64 rounded-md border border-gray-300 px-3 py-2 text-sm"
-                >
-                <p class="mt-1 text-xs text-gray-500">Contoh: 5000000, berarti PO di atas 5 juta wajib approval owner.</p>
-            </div>
-            <button type="submit" class="w-full sm:w-auto rounded-md bg-indigo-600 px-3 py-2 text-xs font-medium text-white hover:bg-indigo-700">Simpan Threshold</button>
-        </form>
+        @if(in_array($currentRoleRaw, [\App\Enums\UserRole::SUPER_ADMIN->value, \App\Enums\UserRole::ADMIN->value, \App\Enums\UserRole::OWNER->value, 'super_admin', 'admin', 'owner'], true))
+            <x-ui.panel class="mt-3" title="Threshold Approval Owner untuk PO" subtitle="PO di atas nilai ini wajib approval owner.">
+                <form method="POST" action="{{ route('ui.approvals.settings.po-threshold.update') }}" class="flex flex-wrap items-end gap-2">
+                    @csrf
+                    <div class="w-full sm:w-auto">
+                        <input
+                            type="text"
+                            inputmode="decimal"
+                            name="po_owner_approval_threshold"
+                            value="{{ $formatMoneyInput(old('po_owner_approval_threshold', (float) ($poOwnerApprovalThreshold ?? 5000000))) }}"
+                            class="js-idr-input w-full sm:w-64 rounded-md border border-gray-300 px-3 py-2 text-sm"
+                        >
+                        <p class="mt-1 text-xs text-gray-500">Contoh: 5000000, berarti PO di atas 5 juta wajib approval owner.</p>
+                    </div>
+                    <button type="submit" class="w-full sm:w-auto rounded-md bg-indigo-600 px-3 py-2 text-xs font-medium text-white hover:bg-indigo-700">Simpan Threshold</button>
+                </form>
+            </x-ui.panel>
         @endif
-    </div>
+    </x-ui.hero>
 
     <script>
         (() => {
@@ -93,7 +99,7 @@
         })();
     </script>
 
-    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+    <x-ui.panel title="Antrian Approval" subtitle="Daftar persetujuan lintas modul procurement" bodyClass="p-0">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
@@ -113,7 +119,16 @@
                             <td class="px-4 py-3">{{ $approval->approver?->name ?? '-' }}</td>
                             <td class="px-4 py-3">{{ class_basename($approval->approvable_type) }} #{{ $approval->approvable_id }}</td>
                             <td class="px-4 py-3">{{ $approval->level }}</td>
-                            <td class="px-4 py-3">{{ $approval->status?->value ?? '-' }}</td>
+                            <td class="px-4 py-3">
+                                <x-ui.status-pill
+                                    :value="$approval->status?->value ?? '-'"
+                                    :classes="[
+                                        'pending' => 'bg-amber-100 text-amber-700',
+                                        'approved' => 'bg-emerald-100 text-emerald-700',
+                                        'rejected' => 'bg-rose-100 text-rose-700',
+                                    ]"
+                                />
+                            </td>
                             <td class="px-4 py-3">{{ optional($approval->approved_at)->format('d M Y H:i') ?? '-' }}</td>
                             <td class="px-4 py-3 text-gray-600">{{ $approval->note ?: '-' }}</td>
                             <td class="px-4 py-3">
@@ -121,20 +136,20 @@
                                     @if($approval->approved_at === null)
                                         <form method="POST" action="{{ route('ui.approvals.approve', $approval) }}">
                                             @csrf
-                                            <button type="submit" title="Approve" aria-label="Approve" class="inline-flex items-center justify-center rounded-md bg-emerald-600 p-1.5 text-white hover:bg-emerald-700">
+                                            <x-ui.action-button type="submit" title="Approve" aria-label="Approve" variant="success" size="icon">
                                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4">
                                                     <path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
                                                 </svg>
-                                            </button>
+                                            </x-ui.action-button>
                                         </form>
 
                                         <form method="POST" action="{{ route('ui.approvals.reject', $approval) }}" onsubmit="return confirm('Tolak approval ini?')">
                                             @csrf
-                                            <button type="submit" title="Reject" aria-label="Reject" class="inline-flex items-center justify-center rounded-md bg-rose-600 p-1.5 text-white hover:bg-rose-700">
+                                            <x-ui.action-button type="submit" title="Reject" aria-label="Reject" variant="danger" size="icon">
                                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4">
                                                     <path d="M18.3 5.71 12 12l6.3 6.29-1.41 1.42L10.59 13.4 4.29 19.7 2.88 18.3 9.17 12 2.88 5.71 4.29 4.29l6.3 6.3 6.29-6.3z"/>
                                                 </svg>
-                                            </button>
+                                            </x-ui.action-button>
                                         </form>
                                     @else
                                         <span class="text-xs text-gray-400">Selesai</span>
@@ -143,14 +158,12 @@
                             </td>
                         </tr>
                     @empty
-                        <tr>
-                            <td colspan="7" class="px-4 py-8 text-center text-gray-500">Belum ada antrian approval.</td>
-                        </tr>
+                        <x-ui.table-empty-row :colspan="7" message="Belum ada antrian approval." />
                     @endforelse
                 </tbody>
             </table>
         </div>
-    </div>
+    </x-ui.panel>
 
     <div class="mt-4">{{ $approvals->links() }}</div>
 @endsection

@@ -3,12 +3,14 @@
 @section('title', 'Purchase Orders')
 
 @section('content')
-    <div class="mb-4">
-        <h2 class="text-xl font-semibold">Purchase Orders</h2>
-        <p class="text-sm text-gray-500">Daftar PO yang diterbitkan oleh purchasing HO.</p>
-    </div>
+    <x-ui.hero
+        class="mb-4"
+        eyebrow="Procurement Workflow"
+        title="Purchase Orders"
+        description="Daftar PO yang diterbitkan oleh purchasing HO."
+    />
 
-    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+    <x-ui.panel title="Daftar Purchase Order" subtitle="Monitoring PO lintas vendor" bodyClass="p-0">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
@@ -38,26 +40,33 @@
                             <td class="px-4 py-3">{{ $po->vendor?->name ?? '-' }}</td>
                             <td class="px-4 py-3">{{ optional($po->order_date)->format('d M Y') }}</td>
                             <td class="px-4 py-3">
-                                <span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium">{{ $po->status?->value }}</span>
+                                <x-ui.status-pill
+                                    :value="$po->status?->value ?? '-'"
+                                    :classes="[
+                                        'draft' => 'bg-slate-100 text-slate-700',
+                                        'submitted' => 'bg-amber-100 text-amber-700',
+                                        'approved' => 'bg-cyan-100 text-cyan-700',
+                                        'processed' => 'bg-emerald-100 text-emerald-700',
+                                        'rejected' => 'bg-rose-100 text-rose-700',
+                                    ]"
+                                />
                             </td>
                             <td class="px-4 py-3 text-right">@rupiah($po->total_amount)</td>
                             <td class="px-4 py-3 text-right">
-                                <a href="{{ route('ui.purchase-orders.download', $po) }}" title="Cetak / Download PDF" aria-label="Cetak / Download PDF" class="inline-flex items-center justify-center rounded-md border border-blue-300 p-1.5 text-blue-700 hover:bg-blue-50">
+                                <x-ui.action-link href="{{ route('ui.purchase-orders.download', $po) }}" title="Cetak / Download PDF" aria-label="Cetak / Download PDF" variant="blue-outline" size="icon">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4">
                                         <path d="M6 9V3h12v6h-2V5H8v4H6zm10 4h2a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h2v6h8v-6zm-6 4v-4h4v4h-4z"/>
                                     </svg>
-                                </a>
+                                </x-ui.action-link>
                             </td>
                         </tr>
                     @empty
-                        <tr>
-                            <td colspan="7" class="px-4 py-8 text-center text-gray-500">Belum ada data purchase order.</td>
-                        </tr>
+                        <x-ui.table-empty-row :colspan="7" message="Belum ada data purchase order." />
                     @endforelse
                 </tbody>
             </table>
         </div>
-    </div>
+    </x-ui.panel>
 
     <div class="mt-4">
         {{ $purchaseOrders->links() }}

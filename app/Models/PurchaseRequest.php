@@ -15,6 +15,27 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property string $number
+ * @property int $sppg_id
+ * @property int $requested_by
+ * @property int $requester_id
+ * @property \Illuminate\Support\Carbon $request_date
+ * @property \Illuminate\Support\Carbon $needed_date
+ * @property DocumentStatus $status
+ * @property ?string $notes
+ * @property bool $is_additional
+ * @property ?int $additional_to_po_id
+ * @property string $total_amount
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property \Illuminate\Support\Carbon $updated_at
+ * @property ?\Illuminate\Support\Carbon $deleted_at
+ * @property-read Sppg $sppg
+ * @property-read User $requester
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, PurchaseOrder> $purchaseOrders
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, PurchaseRequestItem> $items
+ */
 class PurchaseRequest extends Model
 {
     use HasFactory, SoftDeletes;

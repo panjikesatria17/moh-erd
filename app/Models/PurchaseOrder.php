@@ -18,6 +18,30 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property string $number
+ * @property ?int $purchase_request_id
+ * @property int $sppg_id
+ * @property int $vendor_id
+ * @property int $ordered_by
+ * @property \Illuminate\Support\Carbon $order_date
+ * @property \Illuminate\Support\Carbon $expected_date
+ * @property DocumentStatus $status
+ * @property bool $is_direct_purchase
+ * @property ?string $notes
+ * @property string $total_amount
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property \Illuminate\Support\Carbon $updated_at
+ * @property ?\Illuminate\Support\Carbon $deleted_at
+ * @property-read Vendor $vendor
+ * @property-read Sppg $sppg
+ * @property-read User $orderedBy
+ * @property-read PurchaseRequest $purchaseRequest
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, PurchaseOrderItem> $items
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Delivery> $deliveries
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, GoodsReceipt> $goodsReceipts
+ */
 class PurchaseOrder extends Model
 {
     use HasFactory, SoftDeletes;

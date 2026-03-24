@@ -3,12 +3,14 @@
 @section('title', 'Stock Movements')
 
 @section('content')
-    <div class="mb-4">
-        <h2 class="text-xl font-semibold">Stock Movements</h2>
-        <p class="text-sm text-gray-500">Riwayat mutasi stok berdasarkan gudang, produk, dan referensi transaksi.</p>
-    </div>
+    <x-ui.hero
+        class="mb-4"
+        eyebrow="Inventory & Distribution"
+        title="Stock Movements"
+        description="Riwayat mutasi stok berdasarkan gudang, produk, dan referensi transaksi."
+    />
 
-    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+    <x-ui.panel title="Riwayat Mutasi Stok" subtitle="Perubahan stok per transaksi" bodyClass="p-0">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
@@ -30,20 +32,27 @@
                             <td class="px-4 py-3">{{ $movement->warehouse?->name ?? '-' }}</td>
                             <td class="px-4 py-3">{{ $movement->product?->name ?? '-' }}</td>
                             <td class="px-4 py-3">{{ $movement->product?->vendor?->name ?? '-' }}</td>
-                            <td class="px-4 py-3">{{ $movement->type?->value ?? '-' }}</td>
+                            <td class="px-4 py-3">
+                                <x-ui.status-pill
+                                    :value="$movement->type?->value ?? '-'"
+                                    :classes="[
+                                        'in' => 'bg-emerald-100 text-emerald-700',
+                                        'out' => 'bg-rose-100 text-rose-700',
+                                        'adjustment' => 'bg-amber-100 text-amber-700',
+                                    ]"
+                                />
+                            </td>
                             <td class="px-4 py-3 text-right">{{ number_format((float) $movement->quantity, 2, ',', '.') }}</td>
                             <td class="px-4 py-3 text-right">{{ number_format((float) $movement->balance_after, 2, ',', '.') }}</td>
                             <td class="px-4 py-3">{{ $movement->creator?->name ?? '-' }}</td>
                         </tr>
                     @empty
-                        <tr>
-                            <td colspan="8" class="px-4 py-8 text-center text-gray-500">Belum ada data stock movement.</td>
-                        </tr>
+                        <x-ui.table-empty-row :colspan="8" message="Belum ada data stock movement." />
                     @endforelse
                 </tbody>
             </table>
         </div>
-    </div>
+    </x-ui.panel>
 
     <div class="mt-4">{{ $stockMovements->links() }}</div>
 @endsection

@@ -18,7 +18,23 @@ use App\Models\PurchaseOrder;
 use App\Models\PurchaseRequest;
 use App\Models\Sppg;
 use App\Models\Vendor;
+use App\Models\VendorMarginPayment;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $email
+ * @property string $password
+ * @property string $role
+ * @property ?int $sppg_id
+ * @property ?int $vendor_id
+ * @property ?string $signature_path
+ * @property \Illuminate\Support\Carbon $email_verified_at
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property \Illuminate\Support\Carbon $updated_at
+ * @property-read Sppg $sppg
+ * @property-read Vendor $vendor
+ */
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
@@ -101,5 +117,10 @@ class User extends Authenticatable
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class, 'paid_by');
+    }
+
+    public function vendorMarginPayments(): HasMany
+    {
+        return $this->hasMany(VendorMarginPayment::class, 'created_by');
     }
 }

@@ -7,6 +7,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\View\View;
 use Throwable;
 
@@ -32,7 +33,7 @@ class AuthWebController extends Controller
                     'email' => 'Email atau password tidak valid.',
                 ])->onlyInput('email');
             }
-        } catch (QueryException|Throwable $exception) {
+        } catch (QueryException | Throwable $exception) {
             report($exception);
 
             return back()->withErrors([
@@ -51,6 +52,10 @@ class AuthWebController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('login');
+        return redirect()
+            ->route('login')
+            ->withCookie(Cookie::forget(config('session.cookie')))
+            ->withCookie(Cookie::forget('XSRF-TOKEN'))
+            ->header('Clear-Site-Data', '"cache"');
     }
 }

@@ -4,41 +4,48 @@
 
 @section('content')
     @php
-        $canManageMasterWrites = in_array(auth()->user()?->role?->value, [
+        $authRole = auth()->user()?->role;
+        $currentRoleRaw = is_object($authRole) ? ($authRole->value ?? null) : $authRole;
+        $canManageMasterWrites = in_array($currentRoleRaw, [
             \App\Enums\UserRole::SUPER_ADMIN->value,
             \App\Enums\UserRole::PURCHASING->value,
             \App\Enums\UserRole::ADMIN->value,
             \App\Enums\UserRole::OWNER->value,
+            'super_admin',
+            'purchasing',
+            'admin',
+            'owner',
         ], true);
         $formatMoneyInput = static fn ($value) => $value === null || $value === ''
             ? ''
             : rtrim(rtrim(number_format((float) $value, 2, ',', '.'), '0'), ',');
     @endphp
 
-    <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
-        <div>
-            <h2 class="text-xl font-semibold">Master Data - Products</h2>
-            <p class="text-sm text-gray-500">Kelola produk, satuan, kategori, dan batas harga pemerintah.</p>
-        </div>
+    <x-ui.hero
+        class="mb-4"
+        eyebrow="Master Data"
+        title="Master Data - Products"
+        description="Kelola produk, satuan, kategori, dan batas harga pemerintah."
+    >
         <div class="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
-            <a href="{{ route('ui.master-data.products.index') }}" title="Refresh Awal" aria-label="Refresh Awal" class="inline-flex items-center justify-center rounded-md border border-gray-300 p-2 text-gray-700 hover:bg-gray-50">
+            <x-ui.action-link href="{{ route('ui.master-data.products.index') }}" title="Refresh Awal" aria-label="Refresh Awal" variant="outline" size="icon" class="p-2!">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4">
                     <path d="M12 6a6 6 0 0 1 5.232 3.067 1 1 0 0 0 1.736-.992A8 8 0 1 0 20 12a1 1 0 1 0-2 0 6 6 0 1 1-6-6z"/>
                     <path d="M20.707 4.293a1 1 0 0 0-1.414 0L17 6.586V4a1 1 0 1 0-2 0v5a1 1 0 0 0 1 1h5a1 1 0 1 0 0-2h-2.586l2.293-2.293a1 1 0 0 0 0-1.414z"/>
                 </svg>
-            </a>
-            <a href="{{ route('ui.master-data.products.export') }}" title="Export Excel" aria-label="Export Excel" class="inline-flex items-center justify-center rounded-md border border-blue-300 p-2 text-blue-700 hover:bg-blue-50">
+            </x-ui.action-link>
+            <x-ui.action-link href="{{ route('ui.master-data.products.export') }}" title="Export Excel" aria-label="Export Excel" variant="blue-outline" size="icon" class="p-2!">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4">
                     <path d="M12 3a1 1 0 0 1 1 1v8.586l2.293-2.293a1 1 0 1 1 1.414 1.414l-4.004 4.004a1 1 0 0 1-1.414 0L7.285 11.71a1 1 0 0 1 1.414-1.414L11 12.586V4a1 1 0 0 1 1-1z"/>
                     <path d="M5 15a1 1 0 0 1 1 1v2h12v-2a1 1 0 1 1 2 0v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1z"/>
                 </svg>
-            </a>
-            <a href="{{ route('ui.master-data.products.export-pdf', request()->only(['scope', 'q'])) }}" title="Download PDF" aria-label="Download PDF" class="inline-flex items-center justify-center rounded-md border border-rose-300 p-2 text-rose-700 hover:bg-rose-50">
+            </x-ui.action-link>
+            <x-ui.action-link href="{{ route('ui.master-data.products.export-pdf', request()->only(['scope', 'q'])) }}" title="Download PDF" aria-label="Download PDF" variant="rose-outline" size="icon" class="p-2!">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4">
                     <path d="M7 3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9.414a2 2 0 0 0-.586-1.414l-4.414-4.414A2 2 0 0 0 12.586 3H7zm5 1.5V9h4.5L12 4.5z"/>
                     <path d="M8.5 12a1 1 0 0 1 1-1h2.25a2.25 2.25 0 1 1 0 4.5H10.5V17a1 1 0 1 1-2 0v-5zm2 2.5h1.25a.25.25 0 0 0 0-.5H10.5v.5zm5-2.5A1.5 1.5 0 0 1 17 13.5V17a1 1 0 1 1-2 0v-1h-1a1 1 0 1 1 0-2h1v-.5a.5.5 0 0 0-1 0 1 1 0 1 1-2 0 2.5 2.5 0 0 1 2.5-2.5z"/>
                 </svg>
-            </a>
+            </x-ui.action-link>
             @if($canManageMasterWrites)
                 <form method="POST" action="{{ route('ui.master-data.products.import') }}" enctype="multipart/form-data" class="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap">
                     @csrf
@@ -52,9 +59,10 @@
                 </form>
             @endif
         </div>
-    </div>
+    </x-ui.hero>
 
-    <form method="GET" action="{{ route('ui.master-data.products.index') }}" class="mb-4 rounded-xl border border-gray-200 bg-white p-3">
+    <x-ui.panel class="mb-4" title="Filter Produk">
+    <form method="GET" action="{{ route('ui.master-data.products.index') }}" class="">
         <div class="flex flex-wrap items-center gap-2">
             <select name="scope" class="rounded-md border border-gray-300 px-3 py-2 text-sm">
                 <option value="all" @selected(($scope ?? 'all') === 'all')>Semua Produk</option>
@@ -74,6 +82,7 @@
             @endif
         </div>
     </form>
+    </x-ui.panel>
 
     @if($canManageMasterWrites)
     <form method="POST" action="{{ $editProduct ? route('ui.master-data.products.update', $editProduct) : route('ui.master-data.products.store') }}" class="mb-5 rounded-xl border border-gray-200 bg-white p-4">

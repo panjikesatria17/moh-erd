@@ -17,6 +17,8 @@ COMPOSER_BIN="composer"
 RUN_MIGRATE=1
 RUN_COMPOSER=1
 RUN_OPTIMIZE=1
+WEB_USER=""
+WEB_GROUP=""
 
 usage() {
   cat <<'EOF'
@@ -32,6 +34,8 @@ Optional:
   --keep <n>              Simpan n release terakhir (default: 5).
   --php-bin <bin>         Binary PHP (default: php).
   --composer-bin <bin>    Binary composer (default: composer).
+  --web-user <user>       User web server untuk chown (opsional, contoh: www-data).
+  --web-group <group>     Group web server untuk chown (opsional, contoh: www-data).
   --skip-migrate          Tidak menjalankan migrate.
   --skip-composer         Tidak menjalankan composer install.
   --skip-optimize         Tidak menjalankan optimize clear/cache.
@@ -71,6 +75,14 @@ while [[ $# -gt 0 ]]; do
       COMPOSER_BIN="${2:-composer}"
       shift 2
       ;;
+    --web-user)
+      WEB_USER="${2:-}"
+      shift 2
+      ;;
+    --web-group)
+      WEB_GROUP="${2:-}"
+      shift 2
+      ;;
     --skip-migrate)
       RUN_MIGRATE=0
       shift
@@ -104,6 +116,10 @@ fi
 if [[ ! -f "$ARCHIVE" ]]; then
   echo "Error: archive tidak ditemukan: $ARCHIVE" >&2
   exit 1
+fi
+
+if [[ -n "$WEB_USER" && -z "$WEB_GROUP" ]]; then
+  WEB_GROUP="$WEB_USER"
 fi
 
 if ! command -v unzip >/dev/null 2>&1; then
@@ -154,6 +170,18 @@ rm -rf "$NEW_RELEASE_DIR/storage"
 ln -sfn "$SHARED_DIR/storage" "$NEW_RELEASE_DIR/storage"
 rm -f "$NEW_RELEASE_DIR/.env"
 ln -sfn "$SHARED_DIR/.env" "$NEW_RELEASE_DIR/.env"
+
+# Ensure predictable permissions after archive extraction.
+find "$NEW_RELEASE_DIR" -type d -exec chmod 755 {} +
+find "$NEW_RELEASE_DIR" -type f -exec chmod 644 {} +
+chmod -R 775 "$SHARED_DIR/storage"
+mkdir -p "$NEW_RELEASE_DIR/bootstrap/cache"
+chmod -R 775 "$NEW_RELEASE_DIR/bootstrap/cache"
+chmod 755 "$NEW_RELEASE_DIR/artisan" || true
+
+if [[ -n "$WEB_USER" ]]; then
+  chown -R "$WEB_USER:$WEB_GROUP" "$NEW_RELEASE_DIR" "$SHARED_DIR/storage" || true
+fi
 
 if [[ "$RUN_COMPOSER" -eq 1 ]]; then
   if [[ -f "$NEW_RELEASE_DIR/composer.json" ]]; then

@@ -29,6 +29,13 @@ class ProcurementUiFlowTest extends TestCase
 {
     use RefreshDatabase;
 
+    private function skipIfGdIsMissing(): void
+    {
+        if (! function_exists('imagecreatetruecolor')) {
+            $this->markTestSkipped('GD extension is not installed.');
+        }
+    }
+
     public function test_ui_dashboard_redirects_guest_to_login(): void
     {
         $response = $this->get(route('ui.dashboard'));
@@ -101,8 +108,8 @@ class ProcurementUiFlowTest extends TestCase
 
         foreach ($roles as $index => $role) {
             $user = User::query()->create([
-                'name' => 'Dashboard Role '.$role,
-                'email' => 'dashboard.role.'.$role.'.'.$index.'@example.com',
+                'name' => 'Dashboard Role ' . $role,
+                'email' => 'dashboard.role.' . $role . '.' . $index . '@example.com',
                 'password' => 'password123',
                 'role' => $role,
             ]);
@@ -326,6 +333,7 @@ class ProcurementUiFlowTest extends TestCase
             'sppg_id' => $sppg->id,
             'needed_date' => now()->addDay()->toDateString(),
             'notes' => 'PR dari test',
+            'is_product_review_confirmed' => '1',
             'items' => [
                 [
                     'product_id' => $product->id,
@@ -482,7 +490,7 @@ class ProcurementUiFlowTest extends TestCase
         $response->assertForbidden();
     }
 
-    public function test_admin_can_access_users_roles_page_but_super_admin_role_option_is_hidden(): void
+    public function test_admin_cannot_access_users_roles_page(): void
     {
         $admin = User::query()->create([
             'name' => 'Admin Role Manager',
@@ -491,22 +499,12 @@ class ProcurementUiFlowTest extends TestCase
             'role' => UserRole::ADMIN->value,
         ]);
 
-        User::query()->create([
-            'name' => 'Existing Super Admin',
-            'email' => 'existing.super.admin@example.com',
-            'password' => 'password123',
-            'role' => UserRole::SUPER_ADMIN->value,
-        ]);
-
         $response = $this->actingAs($admin)->get(route('ui.users-roles.index'));
 
-        $response->assertOk();
-        $response->assertSee('Users &amp; Roles', false);
-        $response->assertDontSee('value="super_admin"', false);
-        $response->assertDontSee('Program ON/OFF');
+        $response->assertForbidden();
     }
 
-    public function test_admin_cannot_delete_super_admin_account_from_users_roles(): void
+    public function test_admin_cannot_delete_super_admin_account_from_users_roles_page(): void
     {
         $admin = User::query()->create([
             'name' => 'Admin User Delete Guard',
@@ -524,8 +522,7 @@ class ProcurementUiFlowTest extends TestCase
 
         $response = $this->actingAs($admin)->delete(route('ui.users-roles.destroy', $superAdmin));
 
-        $response->assertRedirect(route('ui.users-roles.index'));
-        $response->assertSessionHasErrors(['delete_user']);
+        $response->assertForbidden();
         $this->assertDatabaseHas('users', [
             'id' => $superAdmin->id,
             'email' => 'super.admin.protected@example.com',
@@ -619,6 +616,8 @@ class ProcurementUiFlowTest extends TestCase
 
     public function test_can_download_purchase_order_pdf_from_ui(): void
     {
+        $this->skipIfGdIsMissing();
+
         $actor = User::query()->create([
             'name' => 'Owner Download',
             'email' => 'owner.download@example.com',
@@ -722,6 +721,8 @@ class ProcurementUiFlowTest extends TestCase
 
     public function test_can_download_master_products_pdf_from_ui(): void
     {
+        $this->skipIfGdIsMissing();
+
         $actor = User::query()->create([
             'name' => 'Purchasing Product PDF',
             'email' => 'purchasing.product.pdf@example.com',
@@ -764,6 +765,8 @@ class ProcurementUiFlowTest extends TestCase
 
     public function test_can_download_invoice_pdf_from_ui(): void
     {
+        $this->skipIfGdIsMissing();
+
         $actor = User::query()->create([
             'name' => 'Finance Download',
             'email' => 'finance.download@example.com',
@@ -833,7 +836,7 @@ class ProcurementUiFlowTest extends TestCase
             mkdir($logoDir, 0777, true);
         }
 
-        $logoPath = $logoDir.'/vn-logo-01.png';
+        $logoPath = $logoDir . '/vn-logo-01.png';
         $tinyPng = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO7Zx5QAAAAASUVORK5CYII=';
 
         file_put_contents($logoPath, (string) base64_decode($tinyPng));
@@ -929,6 +932,8 @@ class ProcurementUiFlowTest extends TestCase
 
     public function test_expedition_can_complete_delivery_with_proofs_and_mark_delivered(): void
     {
+        $this->skipIfGdIsMissing();
+
         Storage::fake('public');
 
         $vendor = Vendor::query()->create([
@@ -1437,6 +1442,8 @@ class ProcurementUiFlowTest extends TestCase
 
     public function test_finance_can_download_kwitansi_pdf(): void
     {
+        $this->skipIfGdIsMissing();
+
         $finance = User::query()->create([
             'name' => 'Finance Kwitansi Download',
             'email' => 'finance.kwitansi.download@example.com',
@@ -1540,6 +1547,7 @@ class ProcurementUiFlowTest extends TestCase
             'sppg_id' => $sppg->id,
             'vendor_id' => $vendor->id,
             'needed_date' => now()->addDays(2)->toDateString(),
+            'is_product_review_confirmed' => '1',
             'items' => [
                 [
                     'product_id' => null,
@@ -1738,7 +1746,7 @@ class ProcurementUiFlowTest extends TestCase
         $response->assertViewHas('inventoryValueByProduct', function (array $values) use ($product) {
             return abs((float) ($values[$product->id] ?? 0) - 1000.0) < 0.0001;
         });
-        $response->assertViewHas('totalAssetValue', fn ($value) => abs((float) $value - 1000.0) < 0.0001);
+        $response->assertViewHas('totalAssetValue', fn($value) => abs((float) $value - 1000.0) < 0.0001);
     }
 
     public function test_purchasing_can_crud_master_products(): void
@@ -1987,6 +1995,8 @@ class ProcurementUiFlowTest extends TestCase
 
     public function test_sppg_user_can_download_purchase_request_pdf_for_own_sppg(): void
     {
+        $this->skipIfGdIsMissing();
+
         $vendor = Vendor::query()->create([
             'code' => 'VN-PR-PDF-OWN',
             'name' => 'Vendor PR PDF Own',
@@ -2154,6 +2164,7 @@ class ProcurementUiFlowTest extends TestCase
             'sppg_id' => $sppgTwo->id,
             'vendor_id' => $vendor->id,
             'needed_date' => now()->addDay()->toDateString(),
+            'is_product_review_confirmed' => '1',
             'items' => [
                 [
                     'product_id' => $product->id,
@@ -2218,6 +2229,7 @@ class ProcurementUiFlowTest extends TestCase
             'sppg_id' => $sppg->id,
             'vendor_id' => $vendor->id,
             'needed_date' => now()->addDay()->toDateString(),
+            'is_product_review_confirmed' => '1',
             'items' => [
                 [
                     'product_id' => $product->id,
@@ -2275,6 +2287,7 @@ class ProcurementUiFlowTest extends TestCase
             'sppg_id' => $sppg->id,
             'needed_date' => now()->addDay()->toDateString(),
             'notes' => 'Harus ditolak untuk purchasing',
+            'is_product_review_confirmed' => '1',
             'items' => [
                 [
                     'product_id' => $product->id,
@@ -2687,6 +2700,8 @@ class ProcurementUiFlowTest extends TestCase
 
     public function test_vendor_admin_cannot_download_other_vendor_purchase_order_and_invoice(): void
     {
+        $this->skipIfGdIsMissing();
+
         $vendorOwn = Vendor::query()->create([
             'code' => 'VN-VA-DL-OWN',
             'name' => 'Vendor Admin Download Own',
@@ -2777,6 +2792,8 @@ class ProcurementUiFlowTest extends TestCase
 
     public function test_admin_gudang_can_store_rejected_item_with_image(): void
     {
+        $this->skipIfGdIsMissing();
+
         Storage::fake('public');
 
         $adminGudang = User::query()->create([
@@ -3385,6 +3402,8 @@ class ProcurementUiFlowTest extends TestCase
 
     public function test_sppg_user_can_upload_payment_proof_for_own_sppg_payment(): void
     {
+        $this->skipIfGdIsMissing();
+
         Storage::fake('public');
 
         $vendor = Vendor::query()->create([
@@ -3683,8 +3702,8 @@ class ProcurementUiFlowTest extends TestCase
 
         foreach ($roles as $index => $role) {
             $user = User::query()->create([
-                'name' => 'Funding Access '.$role,
-                'email' => 'funding.access.'.$role.'.'.$index.'@example.com',
+                'name' => 'Funding Access ' . $role,
+                'email' => 'funding.access.' . $role . '.' . $index . '@example.com',
                 'password' => 'password123',
                 'role' => $role,
             ]);
@@ -3722,6 +3741,8 @@ class ProcurementUiFlowTest extends TestCase
 
     public function test_finance_to_owner_funding_workflow_can_be_completed_until_settlement(): void
     {
+        $this->skipIfGdIsMissing();
+
         AppSetting::query()->updateOrCreate(
             ['key' => 'purchase_funding_owner_approval_threshold'],
             ['value' => '100000']
@@ -3978,6 +3999,83 @@ class ProcurementUiFlowTest extends TestCase
             'notifiable_id' => $owner->id,
             'type' => \App\Notifications\PurchaseFundingNeedsOwnerApproval::class,
         ]);
+    }
+
+    public function test_open_notification_marks_it_as_read_and_redirects(): void
+    {
+        AppSetting::query()->updateOrCreate(
+            ['key' => 'purchase_funding_owner_approval_threshold'],
+            ['value' => '100000']
+        );
+
+        $vendor = Vendor::query()->create([
+            'code' => 'VN-FUND-NTF-OPEN',
+            'name' => 'Vendor Funding Notification Open',
+            'is_affiliate' => false,
+            'is_active' => true,
+        ]);
+
+        $sppg = Sppg::query()->create([
+            'code' => 'SPPG-FUND-NTF-OPEN',
+            'name' => 'SPPG Funding Notification Open',
+            'default_vendor_id' => $vendor->id,
+            'is_active' => true,
+        ]);
+
+        $finance = User::query()->create([
+            'name' => 'Finance Funding Notification Open',
+            'email' => 'finance.funding.notification.open@example.com',
+            'password' => 'password123',
+            'role' => UserRole::FINANCE->value,
+        ]);
+
+        $owner = User::query()->create([
+            'name' => 'Owner Funding Notification Open',
+            'email' => 'owner.funding.notification.open@example.com',
+            'password' => 'password123',
+            'role' => UserRole::OWNER->value,
+        ]);
+
+        $purchaseOrder = PurchaseOrder::query()->create([
+            'number' => 'PO-FUND-NTF-OPEN',
+            'purchase_request_id' => null,
+            'sppg_id' => $sppg->id,
+            'vendor_id' => $vendor->id,
+            'ordered_by' => $finance->id,
+            'order_date' => now()->toDateString(),
+            'status' => DocumentStatus::APPROVED,
+            'is_direct_purchase' => false,
+            'total_amount' => 150000,
+        ]);
+
+        $this
+            ->actingAs($finance)
+            ->post(route('ui.purchase-funding-requests.store'), [
+                'purchase_order_id' => $purchaseOrder->id,
+                'fund_source' => 'petty_cash',
+                'requested_amount' => 120000,
+                'title' => 'Dana pembelian notifikasi owner open',
+            ])
+            ->assertRedirect(route('ui.purchase-funding-requests.index', ['fund_source' => 'petty_cash']));
+
+        $fundingRequest = PurchaseFundingRequest::query()->firstOrFail();
+
+        $this
+            ->actingAs($finance)
+            ->post(route('ui.purchase-funding-requests.review', $fundingRequest), [
+                'reviewed_amount' => 120000,
+                'finance_notes' => 'Di atas threshold.',
+            ])
+            ->assertRedirect(route('ui.purchase-funding-requests.index'));
+
+        $notification = $owner->fresh()->notifications()->latest()->firstOrFail();
+
+        $this
+            ->actingAs($owner)
+            ->get(route('ui.notifications.open', $notification->id))
+            ->assertRedirect(route('ui.purchase-funding-requests.index', ['status' => 'reviewed']));
+
+        $this->assertNotNull($owner->fresh()->notifications()->findOrFail($notification->id)->read_at);
     }
 
     public function test_finance_can_export_purchase_funding_reports_to_excel_and_pdf(): void

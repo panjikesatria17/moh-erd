@@ -4,15 +4,18 @@
 
 @section('content')
     @php
-        $currentRoleRaw = auth()->user()?->role?->value;
+        $authRole = auth()->user()?->role;
+        $currentRoleRaw = is_object($authRole) ? ($authRole->value ?? null) : $authRole;
         $currentRole = in_array($currentRoleRaw, ['admin', 'owner'], true) ? 'super_admin' : $currentRoleRaw;
         $canManageFinanceWrites = in_array($currentRole, ['super_admin', 'finance'], true);
     @endphp
 
-    <div class="mb-4">
-        <h2 class="text-xl font-semibold">Kwitansi Penagihan</h2>
-        <p class="text-sm text-gray-500">Gabungkan beberapa invoice vendor (misal 2-3 invoice) menjadi 1 dokumen kwitansi.</p>
-
+    <x-ui.hero
+        class="mb-4"
+        eyebrow="Finance"
+        title="Kwitansi Penagihan"
+        description="Gabungkan beberapa invoice vendor (misal 2-3 invoice) menjadi 1 dokumen kwitansi."
+    >
         <form method="GET" action="{{ route('ui.kwitansi.index') }}" class="mt-3 flex flex-wrap items-center gap-2">
             <select name="vendor" class="w-full sm:w-auto rounded-md border border-gray-300 px-3 py-1.5 text-sm">
                 <option value="">Pilih Vendor</option>
@@ -25,14 +28,11 @@
                 <a href="{{ route('ui.kwitansi.index') }}" class="w-full sm:w-auto rounded-md border border-gray-300 px-3 py-1.5 text-center text-xs font-medium text-gray-700 hover:bg-gray-50">Reset</a>
             @endif
         </form>
-    </div>
+    </x-ui.hero>
 
     @if($canManageFinanceWrites)
-    <div class="mb-4 rounded-xl border border-gray-200 bg-white p-4">
-        <h3 class="text-sm font-semibold text-gray-800">Buat Kwitansi Baru</h3>
-        <p class="mt-1 text-xs text-gray-500">Pilih vendor dan centang invoice yang ingin digabungkan ke dalam 1 kwitansi.</p>
-
-        <form method="POST" action="{{ route('ui.kwitansi.store') }}" class="mt-3 space-y-3">
+    <x-ui.panel class="mb-4" title="Buat Kwitansi Baru" subtitle="Pilih vendor dan centang invoice yang ingin digabungkan ke dalam 1 kwitansi.">
+        <form method="POST" action="{{ route('ui.kwitansi.store') }}" class="space-y-3">
             @csrf
             <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
                 <div>
@@ -99,10 +99,10 @@
                 <button type="submit" class="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">Buat Kwitansi</button>
             </div>
         </form>
-    </div>
+    </x-ui.panel>
     @endif
 
-    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+    <x-ui.panel title="Daftar Kwitansi" subtitle="Rekap dokumen kwitansi yang sudah dibuat" bodyClass="p-0">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
@@ -126,11 +126,11 @@
                             <td class="px-4 py-3 text-right">{{ $kwitansi->invoices->count() }}</td>
                             <td class="px-4 py-3 text-right">@rupiah($kwitansi->total_amount)</td>
                             <td class="px-4 py-3 text-right">
-                                <a href="{{ route('ui.kwitansi.download', $kwitansi) }}" title="Download Kwitansi" aria-label="Download Kwitansi" class="inline-flex items-center justify-center rounded-md border border-blue-300 p-1.5 text-blue-700 hover:bg-blue-50">
+                                <x-ui.action-link href="{{ route('ui.kwitansi.download', $kwitansi) }}" title="Download Kwitansi" aria-label="Download Kwitansi" variant="blue-outline" size="icon">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4">
                                         <path d="M6 9V3h12v6h-2V5H8v4H6zm10 4h2a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h2v6h8v-6zm-6 4v-4h4v4h-4z"/>
                                     </svg>
-                                </a>
+                                </x-ui.action-link>
                             </td>
                         </tr>
                     @empty
@@ -141,7 +141,7 @@
                 </tbody>
             </table>
         </div>
-    </div>
+    </x-ui.panel>
 
     <div class="mt-4">{{ $kwitansis->links() }}</div>
 @endsection

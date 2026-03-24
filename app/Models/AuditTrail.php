@@ -8,6 +8,20 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property int $user_id
+ * @property string $event
+ * @property string $auditable_type
+ * @property int $auditable_id
+ * @property array $old_values
+ * @property array $new_values
+ * @property ?string $ip_address
+ * @property ?string $user_agent
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property \Illuminate\Support\Carbon $updated_at
+ * @property ?\Illuminate\Support\Carbon $deleted_at
+ */
 class AuditTrail extends Model
 {
     use HasFactory, SoftDeletes;

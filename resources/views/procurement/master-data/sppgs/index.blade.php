@@ -4,24 +4,26 @@
 
 @section('content')
     @php
-        $canManageMasterWrites = in_array(auth()->user()?->role?->value, [\App\Enums\UserRole::SUPER_ADMIN->value, \App\Enums\UserRole::ADMIN->value, \App\Enums\UserRole::OWNER->value], true);
+        $authRole = auth()->user()?->role;
+        $currentRoleRaw = is_object($authRole) ? ($authRole->value ?? null) : $authRole;
+        $canManageMasterWrites = in_array($currentRoleRaw, [\App\Enums\UserRole::SUPER_ADMIN->value, \App\Enums\UserRole::ADMIN->value, \App\Enums\UserRole::OWNER->value, 'super_admin', 'admin', 'owner'], true);
     @endphp
 
-    <div class="mb-4 flex items-center justify-between">
-        <div>
-            <h2 class="text-xl font-semibold">Master Data - SPPG</h2>
-            <p class="text-sm text-gray-500">Kelola unit SPPG dan vendor default untuk proses procurement.</p>
-        </div>
-    </div>
+    <x-ui.hero
+        class="mb-4"
+        eyebrow="Master Data"
+        title="Master Data - SPPG"
+        description="Kelola unit SPPG dan vendor default untuk proses procurement."
+    />
 
     @if($canManageMasterWrites)
-    <form method="POST" action="{{ $editSppg ? route('ui.master-data.sppgs.update', $editSppg) : route('ui.master-data.sppgs.store') }}" class="mb-5 rounded-xl border border-gray-200 bg-white p-4">
+    <x-ui.panel class="mb-5" :title="$editSppg ? 'Edit SPPG' : 'Tambah SPPG'">
+    <form method="POST" action="{{ $editSppg ? route('ui.master-data.sppgs.update', $editSppg) : route('ui.master-data.sppgs.store') }}" class="">
         @csrf
         @if($editSppg)
             @method('PUT')
         @endif
         <div class="mb-3 flex items-center justify-between gap-2">
-            <h3 class="text-sm font-semibold text-gray-700">{{ $editSppg ? 'Edit SPPG' : 'Tambah SPPG' }}</h3>
             @if($editSppg)
                 <a href="{{ route('ui.master-data.sppgs.index') }}" class="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Batal Edit</a>
             @endif
@@ -68,9 +70,10 @@
             <button type="submit" class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">{{ $editSppg ? 'Update SPPG' : 'Simpan SPPG' }}</button>
         </div>
     </form>
+    </x-ui.panel>
     @endif
 
-    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+    <x-ui.panel title="Daftar SPPG" subtitle="Unit SPPG aktif untuk proses procurement" bodyClass="p-0">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
@@ -94,9 +97,13 @@
                             <td class="px-4 py-3">{{ $sppg->accounting_name ?: '-' }}</td>
                             <td class="px-4 py-3">{{ $sppg->defaultVendor?->name ?? '-' }}</td>
                             <td class="px-4 py-3">
-                                <span class="rounded-full px-2.5 py-1 text-xs font-medium {{ $sppg->is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600' }}">
-                                    {{ $sppg->is_active ? 'Aktif' : 'Nonaktif' }}
-                                </span>
+                                <x-ui.status-pill
+                                    :value="$sppg->is_active ? 'aktif' : 'nonaktif'"
+                                    :classes="[
+                                        'aktif' => 'bg-emerald-100 text-emerald-700',
+                                        'nonaktif' => 'bg-slate-100 text-slate-600',
+                                    ]"
+                                />
                             </td>
                             <td class="px-4 py-3 text-gray-600">{{ $sppg->address ?: '-' }}</td>
                             <td class="px-4 py-3">
@@ -120,7 +127,7 @@
                 </tbody>
             </table>
         </div>
-    </div>
+    </x-ui.panel>
 
     <div class="mt-4">
         {{ $sppgs->links() }}

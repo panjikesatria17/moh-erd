@@ -17,6 +17,29 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 
+/**
+ * @property int $id
+ * @property string $sku
+ * @property string $name
+ * @property int $product_category_id
+ * @property int $vendor_id
+ * @property string $unit
+ * @property ?int $pcs_per_box
+ * @property ?int $pcs_per_pack
+ * @property ?string $purchase_price
+ * @property ?string $selling_price
+ * @property ?string $government_price_cap
+ * @property ?string $price_variance_percent
+ * @property ?string $price_variance_amount
+ * @property ?int $minimum_stock_level
+ * @property ?int $reorder_stock_level
+ * @property int $total_inventory
+ * @property bool $is_active
+ * @property bool $is_ad_hoc
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property \Illuminate\Support\Carbon $updated_at
+ * @property ?\Illuminate\Support\Carbon $deleted_at
+ */
 class Product extends Model
 {
     use HasFactory, SoftDeletes;
@@ -27,8 +50,6 @@ class Product extends Model
         // Pastikan purchase_price dan total_inventory tidak null
         return ($this->total_inventory ?? 0) * ($this->purchase_price ?? 0);
     }
-
-    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'sku',

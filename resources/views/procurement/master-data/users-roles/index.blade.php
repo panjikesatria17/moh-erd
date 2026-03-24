@@ -4,22 +4,25 @@
 
 @section('content')
     @php
-        $currentRoleValue = auth()->user()?->role?->value;
+        $authRole = auth()->user()?->role;
+        $currentRoleValue = is_object($authRole) ? ($authRole->value ?? null) : $authRole;
         $isRestrictedViewer = in_array($currentRoleValue, [\App\Enums\UserRole::ADMIN->value, \App\Enums\UserRole::OWNER->value], true);
     @endphp
 
-    <div class="mb-4">
-        <h2 class="text-xl font-semibold">Users & Roles</h2>
-        <p class="text-sm text-gray-500">Daftar user, role, dan scope akses (SPPG/Vendor).</p>
-    </div>
+    <x-ui.hero
+        class="mb-4"
+        eyebrow="Master Data"
+        title="Users & Roles"
+        description="Daftar user, role, dan scope akses (SPPG/Vendor)."
+    />
 
-    <form method="POST" action="{{ $editUser ? route('ui.users-roles.update', $editUser) : route('ui.users-roles.store') }}" class="mb-5 rounded-xl border border-gray-200 bg-white p-4">
+    <x-ui.panel class="mb-5" :title="$editUser ? 'Edit User' : 'Tambah User'">
+    <form method="POST" action="{{ $editUser ? route('ui.users-roles.update', $editUser) : route('ui.users-roles.store') }}" class="">
         @csrf
         @if($editUser)
             @method('PUT')
         @endif
         <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h3 class="text-sm font-semibold text-gray-700">{{ $editUser ? 'Edit User' : 'Tambah User' }}</h3>
             @if($editUser)
                 <a href="{{ route('ui.users-roles.index') }}" class="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Batal Edit</a>
             @endif
@@ -79,8 +82,9 @@
             Scope SPPG wajib untuk role sppg_user, scope Vendor wajib untuk role vendor_admin dan ekspedisi.
         </p>
     </form>
+    </x-ui.panel>
 
-    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+    <x-ui.panel title="Daftar User" subtitle="Akun dan role akses sistem" bodyClass="p-0">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
@@ -128,7 +132,7 @@
                 </tbody>
             </table>
         </div>
-    </div>
+    </x-ui.panel>
 
     <div class="mt-4">{{ $users->links() }}</div>
 

@@ -3,9 +3,12 @@
 @section('title', 'Deliveries')
 
 @section('content')
-    <div class="mb-4">
-        <h2 class="text-xl font-semibold">Deliveries</h2>
-        <p class="text-sm text-gray-500">Monitoring pengiriman barang dari gudang/vendor ke SPPG.</p>
+    <x-ui.hero
+        class="mb-4"
+        eyebrow="Inventory & Distribution"
+        title="Deliveries"
+        description="Monitoring pengiriman barang dari gudang/vendor ke SPPG."
+    >
         <form method="GET" action="{{ route('ui.deliveries.index') }}" class="mt-3 flex flex-wrap items-center gap-2">
             <select name="vendor" class="w-full sm:w-auto rounded-md border border-gray-300 px-3 py-1.5 text-sm">
                 <option value="">Semua Vendor</option>
@@ -23,7 +26,7 @@
                 Vendor aktif: {{ $selectedVendor->name }}
             </div>
         @endif
-    </div>
+    </x-ui.hero>
 
     <div class="space-y-3 md:hidden" id="mobile-delivery-list">
         <div class="sticky top-0 z-10 -mx-1 flex items-center gap-2 overflow-x-auto px-1 py-1">
@@ -160,7 +163,7 @@
         </div>
     @endif
 
-    <div class="hidden overflow-hidden rounded-xl border border-gray-200 bg-white md:block">
+    <x-ui.panel class="hidden md:block" title="Daftar Delivery" subtitle="Status pengiriman dan dokumen bukti" bodyClass="p-0">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
@@ -188,15 +191,17 @@
                                 @php
                                     $rawStatus = $delivery->status?->value;
                                     $statusLabel = $rawStatus === 'processed' ? 'on proses' : ($rawStatus ?? '-');
-
-                                    $statusBadgeClass = match ($rawStatus) {
-                                        'processed' => 'bg-amber-100 text-amber-800',
-                                        'delivered', 'invoiced', 'paid' => 'bg-emerald-100 text-emerald-800',
-                                        'rejected' => 'bg-rose-100 text-rose-800',
-                                        default => 'bg-gray-100 text-gray-700',
-                                    };
                                 @endphp
-                                <span class="rounded-full px-2.5 py-1 text-xs font-medium {{ $statusBadgeClass }}">{{ $statusLabel }}</span>
+                                <x-ui.status-pill
+                                    :value="$statusLabel"
+                                    :classes="[
+                                        'on proses' => 'bg-amber-100 text-amber-800',
+                                        'delivered' => 'bg-emerald-100 text-emerald-800',
+                                        'invoiced' => 'bg-emerald-100 text-emerald-800',
+                                        'paid' => 'bg-emerald-100 text-emerald-800',
+                                        'rejected' => 'bg-rose-100 text-rose-800',
+                                    ]"
+                                />
                             </td>
                             <td class="px-4 py-3">
                                 <div class="flex flex-wrap items-center gap-2 text-xs">
@@ -214,11 +219,11 @@
                             <td class="px-4 py-3 text-right">@rupiah($delivery->total_amount)</td>
                             <td class="px-4 py-3">
                                 <div class="flex justify-end gap-2">
-                                    <a href="{{ route('ui.deliveries.surat-jalan.preview', $delivery) }}" target="_blank" title="Preview Surat Jalan" aria-label="Preview Surat Jalan" class="inline-flex items-center justify-center rounded-md border border-gray-300 p-1.5 text-gray-700 hover:bg-gray-50">
+                                    <x-ui.action-link href="{{ route('ui.deliveries.surat-jalan.preview', $delivery) }}" target="_blank" title="Preview Surat Jalan" aria-label="Preview Surat Jalan" variant="outline" size="icon">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="h-4 w-4">
                                             <path d="M7 3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9.414a2 2 0 0 0-.586-1.414l-4.414-4.414A2 2 0 0 0 12.586 3H7zm5 1.5V9h4.5L12 4.5zM8 12a1 1 0 1 1 0-2h8a1 1 0 1 1 0 2H8zm0 4a1 1 0 1 1 0-2h8a1 1 0 1 1 0 2H8z"/>
                                         </svg>
-                                    </a>
+                                    </x-ui.action-link>
 
                                     @if(($canCompleteDelivery ?? false) && $delivery->status?->value === 'processed')
                                         <button
@@ -235,14 +240,12 @@
                             </td>
                         </tr>
                     @empty
-                        <tr>
-                            <td colspan="9" class="px-4 py-8 text-center text-gray-500">Belum ada data delivery.</td>
-                        </tr>
+                        <x-ui.table-empty-row :colspan="9" message="Belum ada data delivery." />
                     @endforelse
                 </tbody>
             </table>
         </div>
-    </div>
+    </x-ui.panel>
 
     <div class="mt-4">
         {{ $deliveries->links() }}
@@ -284,11 +287,7 @@
         @endforelse
     </div>
 
-    <div class="mt-4 hidden overflow-hidden rounded-xl border border-gray-200 bg-white md:block">
-        <div class="border-b border-gray-200 bg-gray-50 px-4 py-3">
-            <h3 class="text-sm font-semibold text-gray-700">PO Siap Dikirim (Per Vendor)</h3>
-            <p class="text-xs text-gray-500">PO approved/processed yang belum punya dokumen delivery.</p>
-        </div>
+    <x-ui.panel class="mt-4 hidden md:block" title="PO Siap Dikirim (Per Vendor)" subtitle="PO approved/processed yang belum punya dokumen delivery." bodyClass="p-0">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
@@ -311,7 +310,16 @@
                             <td class="px-4 py-3">{{ $po->vendor?->name ?? '-' }}</td>
                             <td class="px-4 py-3">{{ optional($po->order_date)->format('d M Y') ?? '-' }}</td>
                             <td class="px-4 py-3">
-                                <span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium">{{ $po->status?->value ?? '-' }}</span>
+                                <x-ui.status-pill
+                                    :value="$po->status?->value ?? '-'"
+                                    :classes="[
+                                        'draft' => 'bg-slate-100 text-slate-700',
+                                        'submitted' => 'bg-amber-100 text-amber-700',
+                                        'approved' => 'bg-cyan-100 text-cyan-700',
+                                        'processed' => 'bg-emerald-100 text-emerald-700',
+                                        'rejected' => 'bg-rose-100 text-rose-700',
+                                    ]"
+                                />
                             </td>
                             <td class="px-4 py-3 text-right">@rupiah($po->total_amount)</td>
                             <td class="px-4 py-3 text-xs text-gray-500 hidden md:table-cell">Pembuatan delivery dilakukan dari proses PO.</td>
@@ -320,9 +328,7 @@
                                     <form method="POST" action="{{ route('ui.purchase-orders.create-delivery', $po) }}">
                                         @csrf
                                         <input type="hidden" name="vendor" value="{{ request('vendor') }}">
-                                        <button type="submit" class="rounded-md bg-indigo-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-indigo-700">
-                                            Kirim (On Proses)
-                                        </button>
+                                        <x-ui.action-button type="submit" variant="primary" size="xs">Kirim (On Proses)</x-ui.action-button>
                                     </form>
                                 @else
                                     <span class="text-xs text-gray-400">-</span>
@@ -330,14 +336,12 @@
                             </td>
                         </tr>
                     @empty
-                        <tr>
-                            <td colspan="8" class="px-4 py-6 text-center text-gray-500">Tidak ada PO siap dikirim untuk filter vendor saat ini.</td>
-                        </tr>
+                        <x-ui.table-empty-row :colspan="8" message="Tidak ada PO siap dikirim untuk filter vendor saat ini." />
                     @endforelse
                 </tbody>
             </table>
         </div>
-    </div>
+    </x-ui.panel>
 
     <script>
         (() => {

@@ -432,7 +432,7 @@
                             @endif
                         </div>
                         <div class="signature-name">{{ $creatorName ?: 'Operator' }}</div>
-                        <div class="signature-title">Ginan Akuntansi</div>
+                        <div class="signature-title">User Request</div>
                     </td>
                     <td class="signature-col-center"></td>
                     <td class="signature-col-right">

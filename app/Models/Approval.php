@@ -9,6 +9,20 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property string $approvable_type
+ * @property int $approvable_id
+ * @property int $level
+ * @property int $approver_id
+ * @property DocumentStatus $status
+ * @property ?string $note
+ * @property ?\Illuminate\Support\Carbon $approved_at
+ * @property \Illuminate\Support\Carbon $created_at
+ * @property \Illuminate\Support\Carbon $updated_at
+ * @property ?\Illuminate\Support\Carbon $deleted_at
+ * @property-read Model $approvable
+ */
 class Approval extends Model
 {
     use HasFactory, SoftDeletes;

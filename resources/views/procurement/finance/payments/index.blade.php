@@ -3,18 +3,21 @@
 @section('title', 'Payments')
 
 @section('content')
-    <div class="mb-4">
-        <h2 class="text-xl font-semibold">Payments</h2>
-        <p class="text-sm text-gray-500">Monitoring pembayaran invoice vendor.</p>
+    <x-ui.hero
+        class="mb-4"
+        eyebrow="Finance"
+        title="Payments"
+        description="Monitoring pembayaran invoice vendor."
+    >
         @if(isset($selectedInvoice) && $selectedInvoice)
             <div class="mt-2 inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
                 <span>Filter invoice: {{ $selectedInvoice->number }}</span>
                 <a href="{{ route('ui.payments.index') }}" class="rounded-full border border-blue-200 bg-white px-2 py-0.5 text-blue-700 hover:bg-blue-100">Reset</a>
             </div>
         @endif
-    </div>
+    </x-ui.hero>
 
-    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+    <x-ui.panel title="Daftar Pembayaran" subtitle="Status pembayaran, bukti transfer, dan approval" bodyClass="p-0">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
                 <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
@@ -39,7 +42,18 @@
                             <td class="px-4 py-3">{{ $payment->invoice?->sppg?->name ?? '-' }}</td>
                             <td class="px-4 py-3">{{ optional($payment->payment_date)->format('d M Y') ?? '-' }}</td>
                             <td class="px-4 py-3 text-right">@rupiah($payment->amount)</td>
-                            <td class="px-4 py-3">{{ $payment->status?->value ?? '-' }}</td>
+                            <td class="px-4 py-3">
+                                <x-ui.status-pill
+                                    :value="$payment->status?->value ?? '-'"
+                                    :classes="[
+                                        'draft' => 'bg-slate-100 text-slate-700',
+                                        'submitted' => 'bg-amber-100 text-amber-700',
+                                        'rejected' => 'bg-rose-100 text-rose-700',
+                                        'approved' => 'bg-cyan-100 text-cyan-700',
+                                        'paid' => 'bg-emerald-100 text-emerald-700',
+                                    ]"
+                                />
+                            </td>
                             <td class="px-4 py-3">{{ $payment->payer?->name ?? '-' }}</td>
                             <td class="px-4 py-3">
                                 @if($payment->proof_image_path)
@@ -65,20 +79,21 @@
                             <td class="px-4 py-3">
                                 <div class="flex justify-end gap-2">
                                     @if(($canUploadProof ?? false) && in_array($payment->status?->value, ['draft', 'rejected'], true))
-                                        <button
+                                        <x-ui.action-button
                                             type="button"
                                             onclick="openPaymentProofModal({{ $payment->id }})"
-                                            class="rounded-md bg-indigo-600 px-2 py-1 text-xs font-medium text-white hover:bg-indigo-700"
+                                            variant="primary"
+                                            size="xs"
                                         >
                                             Upload Bukti
-                                        </button>
+                                        </x-ui.action-button>
                                     @elseif(($canApproveProof ?? false) && $payment->status?->value === 'submitted')
                                         <form method="POST" action="{{ route('ui.payments.approve', $payment) }}">
                                             @csrf
                                             @if(request()->filled('invoice'))
                                                 <input type="hidden" name="invoice" value="{{ request('invoice') }}">
                                             @endif
-                                            <button type="submit" class="rounded-md bg-emerald-600 px-2 py-1 text-xs font-medium text-white hover:bg-emerald-700">Approve</button>
+                                            <x-ui.action-button type="submit" variant="success" size="xs">Approve</x-ui.action-button>
                                         </form>
                                     @elseif(($canApproveProof ?? false) && in_array($payment->status?->value, ['draft', 'rejected'], true))
                                         <span class="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700">Menunggu upload SPPG</span>
@@ -95,14 +110,12 @@
                             </td>
                         </tr>
                     @empty
-                        <tr>
-                            <td colspan="10" class="px-4 py-8 text-center text-gray-500">Belum ada data pembayaran.</td>
-                        </tr>
+                        <x-ui.table-empty-row :colspan="10" message="Belum ada data pembayaran." />
                     @endforelse
                 </tbody>
             </table>
         </div>
-    </div>
+    </x-ui.panel>
 
     @foreach($payments as $payment)
         @if(($canUploadProof ?? false) && in_array($payment->status?->value, ['draft', 'rejected'], true))
@@ -147,8 +160,8 @@
                         </div>
 
                         <div class="flex justify-end gap-2">
-                            <button type="button" onclick="closePaymentProofModal({{ $payment->id }})" class="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">Batal</button>
-                            <button type="submit" class="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700">Upload & Submit</button>
+                            <x-ui.action-button type="button" onclick="closePaymentProofModal({{ $payment->id }})" variant="outline" size="sm">Batal</x-ui.action-button>
+                            <x-ui.action-button type="submit" variant="primary" size="sm">Upload & Submit</x-ui.action-button>
                         </div>
                     </form>
                 </div>
